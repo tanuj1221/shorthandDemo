@@ -32,10 +32,20 @@ exports.loginStudent = async (req, res) => {
   }
 };
 
-exports.logoutStudent = (req, res) => {
+exports.logoutStudent = async (req, res) => {
   // Checking if the student session exists
   console.log('logged out')
   if (req.session.studentId) {
+      const studentId = req.session.studentId;
+      
+      // Mark student as logged out in database
+      try {
+          const updateQuery = 'UPDATE student14 SET is_logged_in = 0 WHERE student_id = ?';
+          await connection.query(updateQuery, [studentId]);
+      } catch (err) {
+          console.error('Error updating logout status:', err);
+      }
+      
       // Destroy the session
       req.session.destroy(err => {
           if (err) {
