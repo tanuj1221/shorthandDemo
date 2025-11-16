@@ -29,7 +29,7 @@ const schemas = {
     batchStartDate: 'date',
     batchEndDate: 'date'
   },
-  coursesdb1: {
+  coursesDb1: {
     coursed: 'int',
     courseName: 'text',
     TutorImagePath: 'text',
@@ -151,7 +151,7 @@ const schemas = {
   },
   subjectsdb: {
     subjectId: 'int',
-    coursed: 'int referenced {coursesdb1.coursed}',
+    coursed: 'int referenced {coursesDb1.coursed}',
     subject_name: 'text',
     subject_name_short: 'varchar(50)',
     Daily_Timer: 'time',

@@ -22,7 +22,7 @@ exports.getSubjectIds = async (req,res) => {
 exports.getCourses = async (req,res) => {
     try{
         
-        const courseQuery = "SELECT * from coursesdb1"
+        const courseQuery = "SELECT * from coursesDb1"
         console.log('etching course')
 
         const courses = await connection.query(courseQuery)
