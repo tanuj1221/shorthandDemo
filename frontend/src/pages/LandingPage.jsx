@@ -10,7 +10,7 @@ import Footer from '../components/LandingComponent/Footer';
 import LoginOverlay from '../components/LandingComponent/LoginOverlay';
 
 const LandingPage = () => {
-  const [showLoginOverlay, setShowLoginOverlay] = useState(false);
+  const [showLoginOverlay, setShowLoginOverlay] = useState(true); // Changed to true - login opens by default
   const navigate = useNavigate();
 
   const handleLoginClick = () => {
@@ -29,13 +29,13 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <LandingNavbar onLoginClick={handleLoginClick} />
-      <HeroSection onLoginClick={handleLoginClick} />
-      <NoticeBoard />
-      <AboutSection />
-      <CoursesSection />
-      <ContactSection />
-      <Footer />
+      {/* <LandingNavbar onLoginClick={handleLoginClick} /> */}
+      {/* <HeroSection onLoginClick={handleLoginClick} /> */}
+      {/* <NoticeBoard /> */}
+      {/* <AboutSection /> */}
+      {/* <CoursesSection /> */}
+      {/* <ContactSection /> */}
+      {/* <Footer /> */}
       
       {showLoginOverlay && (
         <LoginOverlay 

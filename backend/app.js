@@ -18,7 +18,7 @@ const path = require('path');
 const Razorpay = require('razorpay');
 
 const app = express();
-const PORT = 3001;
+const PORT = 3000;
 
 // CORS Configuration - SINGLE configuration only
 app.use(cors({

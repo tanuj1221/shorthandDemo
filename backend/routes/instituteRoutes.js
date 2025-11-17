@@ -13,6 +13,7 @@ router.get('/students', isAuthenticatedInsti, instituteController.getStudentsByI
 router.post('/registerstudent',isAuthenticatedInsti,instituteController.registerStudent);
 router.get('/getstudents', isAuthenticatedInsti, instituteController.getstudentslist);
 router.get('/paystudents', isAuthenticatedInsti, instituteController.getPendingAmountStudentsList);
+router.get('/download-students-excel', isAuthenticatedInsti, instituteController.downloadStudentsExcel);
 router.get('/student-payments-status', instituteController.getStudentPaymentsStatus);
 router.post('/submit-audio', upload.single('audioFile'), instituteController.submitAudio);
 router.post('/reset-password', isAuthenticatedInsti, instituteController.resetInstitutePassword);

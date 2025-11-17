@@ -55,11 +55,6 @@ const Footer = () => {
                   Contact Us
                 </a>
               </li>
-              <li>
-                <Link to="/admin_login" className="text-gray-300 hover:text-white transition-colors text-sm">
-                  Admin Login
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -97,23 +92,19 @@ const Footer = () => {
               <li className="flex items-start space-x-3">
                 <Mail className="w-5 h-5 text-indigo-300 flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <div className="text-gray-300">support@shorthandlms.com</div>
-                  <div className="text-gray-300">info@shorthandlms.com</div>
+                  <div className="text-gray-300">-</div>
                 </div>
               </li>
               <li className="flex items-start space-x-3">
                 <Phone className="w-5 h-5 text-indigo-300 flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <div className="text-gray-300">+91 1234567890</div>
-                  <div className="text-gray-300">+91 0987654321</div>
+                  <div className="text-gray-300">-</div>
                 </div>
               </li>
               <li className="flex items-start space-x-3">
                 <MapPin className="w-5 h-5 text-indigo-300 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-gray-300">
-                  123 Education Street<br />
-                  Pune, Maharashtra 411001<br />
-                  India
+                  -
                 </div>
               </li>
             </ul>

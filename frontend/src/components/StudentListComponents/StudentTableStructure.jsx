@@ -22,7 +22,6 @@ import {
   Snackbar,
   Alert,
   Chip,
-  Pagination,
   CircularProgress,
   Menu,
   MenuItem,
@@ -74,16 +73,17 @@ const StudentTableStructure = ({
   students = [],
   selected = [],
   loading = false,
-  currentPage = 1,
-  totalPages = 1,
   searchTerm = '',
   statusFilter = 'all',
+  batchYearFilter = 'all',
+  batchYears = [],
   onSelectAll,
   onSelect,
   onSearch,
   onStatusFilterChange,
-  onPageChange,
+  onBatchYearFilterChange,
   onRefresh,
+  onDownloadExcel,
   onDeleteSelected,
   onDeleteConfirm,
   onDeleteCancel,
@@ -93,8 +93,7 @@ const StudentTableStructure = ({
   onSnackbarClose,
   onFilterMenuOpen,
   onFilterMenuClose,
-  renderImage,
-  rowsPerPage = 5
+  renderImage
 }) => {
   const [imageErrors, setImageErrors] = useState({});
 
@@ -218,13 +217,16 @@ const StudentTableStructure = ({
           <Button variant="outlined" color="primary" startIcon={<FilterIcon />} onClick={onFilterMenuOpen} disabled={loading}>
             Filter
           </Button>
+          <Button variant="contained" color="success" onClick={onDownloadExcel} disabled={loading}>
+            Export Excel
+          </Button>
         </Box>
       </Box>
 
       {/* Filter Menu */}
       <Menu anchorEl={filterAnchorEl} open={Boolean(filterAnchorEl)} onClose={onFilterMenuClose}>
         <MenuItem>
-          <FormControl fullWidth>
+          <FormControl fullWidth sx={{ minWidth: 200 }}>
             <InputLabel>Status</InputLabel>
             <Select
               value={statusFilter}
@@ -232,9 +234,25 @@ const StudentTableStructure = ({
               onChange={(e) => onStatusFilterChange(e.target.value)}
               size="small"
             >
-              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="all">All Status</MenuItem>
               <MenuItem value="paid">Paid</MenuItem>
               <MenuItem value="unpaid">Unpaid</MenuItem>
+            </Select>
+          </FormControl>
+        </MenuItem>
+        <MenuItem>
+          <FormControl fullWidth sx={{ minWidth: 200 }}>
+            <InputLabel>Batch Year</InputLabel>
+            <Select
+              value={batchYearFilter}
+              label="Batch Year"
+              onChange={(e) => onBatchYearFilterChange(e.target.value)}
+              size="small"
+            >
+              <MenuItem value="all">All Years</MenuItem>
+              {batchYears.map(year => (
+                <MenuItem key={year} value={year}>{year}</MenuItem>
+              ))}
             </Select>
           </FormControl>
         </MenuItem>
@@ -277,8 +295,8 @@ const StudentTableStructure = ({
         </Box>
       )}
 
-      {/* Student Table */}
-      <TableContainer>
+      {/* Student Table - Scrollable */}
+      <TableContainer sx={{ maxHeight: 600, overflow: 'auto' }}>
         <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
@@ -296,6 +314,7 @@ const StudentTableStructure = ({
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Last Name</TableCell>
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Password</TableCell>
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Batch Year</TableCell>
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Subject</TableCell>
             </TableRow>
           </TableHead>
@@ -326,6 +345,14 @@ const StudentTableStructure = ({
                 <TableCell>
                   {renderPaymentStatus(student)}
                 </TableCell>
+                <TableCell>
+                  <Chip 
+                    label={student.batch_year || 'N/A'} 
+                    size="small" 
+                    variant="outlined"
+                    color="primary"
+                  />
+                </TableCell>
                 <TableCell>{student.subject_name || student.subjects}</TableCell>
               </TableRow>
             ))}
@@ -333,16 +360,11 @@ const StudentTableStructure = ({
         </Table>
       </TableContainer>
 
-      {/* Pagination */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-        <Pagination
-          count={totalPages}
-          page={currentPage}
-          onChange={onPageChange}
-          color="primary"
-          showFirstButton
-          showLastButton
-        />
+      {/* Total Count */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        <Typography variant="body2" color="text.secondary">
+          Total Students: {students.length}
+        </Typography>
       </Box>
 
       {/* Delete Confirmation Dialog */}

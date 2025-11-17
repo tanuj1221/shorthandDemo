@@ -355,16 +355,15 @@ const StudentList = () => {
   const [selected, setSelected] = React.useState([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [snackbar, setSnackbar] = React.useState({ open: false, message: '', severity: 'success' });
-  const [currentPage, setCurrentPage] = React.useState(1);
   const [loading, setLoading] = React.useState(false);
   const [filterAnchorEl, setFilterAnchorEl] = React.useState(null);
   const [statusFilter, setStatusFilter] = React.useState('all');
+  const [batchYearFilter, setBatchYearFilter] = React.useState('2026');
   const [actionAnchorEl, setActionAnchorEl] = React.useState(null);
   const [selectedStudent, setSelectedStudent] = React.useState(null);
   const [students, setStudents] = React.useState([]);
   const [apiError, setApiError] = React.useState(null);
-
-  const rowsPerPage = 5;
+  const [batchYears, setBatchYears] = React.useState([]);
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -392,6 +391,11 @@ const StudentList = () => {
       }));
 
       setStudents(transformedData);
+      
+      // Extract unique batch years
+      const uniqueBatchYears = [...new Set(transformedData.map(s => s.batch_year).filter(Boolean))].sort();
+      setBatchYears(uniqueBatchYears);
+      
       showSnackbar(`Loaded ${transformedData.length} students`, 'success');
     } catch (error) {
       console.error('Error fetching students:', error);
@@ -438,17 +442,41 @@ const StudentList = () => {
     );
     const studentStatus = student.amount === 'pending' ? 'unpaid' : student.amount;
     const matchesStatus = statusFilter === 'all' || studentStatus === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesBatchYear = batchYearFilter === 'all' || student.batch_year === batchYearFilter;
+    return matchesSearch && matchesStatus && matchesBatchYear;
   });
 
-  const totalPages = Math.ceil(filteredStudents.length / rowsPerPage);
-  const paginatedStudents = filteredStudents.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  );
-
   const handleSelectAll = (checked) => {
-    setSelected(checked ? paginatedStudents.map(s => s.student_id) : []);
+    setSelected(checked ? filteredStudents.map(s => s.student_id) : []);
+  };
+
+  const downloadExcel = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('https://www.shorthandexam.in/download-students-excel', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) throw new Error('Failed to download Excel');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `students_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      showSnackbar('Excel file downloaded successfully', 'success');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      showSnackbar('Failed to download Excel file', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSelect = (id) => {
@@ -525,19 +553,20 @@ const StudentList = () => {
 
   return (
     <StudentTableStructure
-      students={paginatedStudents}
+      students={filteredStudents}
       selected={selected}
       loading={loading}
-      currentPage={currentPage}
-      totalPages={totalPages}
       searchTerm={searchTerm}
       statusFilter={statusFilter}
+      batchYearFilter={batchYearFilter}
+      batchYears={batchYears}
       onSelectAll={handleSelectAll}
       onSelect={handleSelect}
       onSearch={setSearchTerm}
       onStatusFilterChange={setStatusFilter}
-      onPageChange={setCurrentPage}
+      onBatchYearFilterChange={setBatchYearFilter}
       onRefresh={handleRefresh}
+      onDownloadExcel={downloadExcel}
       onDeleteSelected={() => setDeleteDialogOpen(true)}
       onActionMenuOpen={handleActionMenuOpen}
       onView={handleView}
@@ -554,7 +583,6 @@ const StudentList = () => {
       onFilterMenuClose={handleFilterMenuClose}
       onActionMenuClose={handleActionMenuClose}
       renderStatusChip={renderStatusChip}
-      rowsPerPage={rowsPerPage}
     />
   );
 };

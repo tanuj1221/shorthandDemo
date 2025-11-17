@@ -69,8 +69,7 @@ const ContactSection = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Email</h4>
-                    <p className="text-gray-600">support@shorthandlms.com</p>
-                    <p className="text-gray-600">info@shorthandlms.com</p>
+                    <p className="text-gray-600">-</p>
                   </div>
                 </div>
 
@@ -80,8 +79,7 @@ const ContactSection = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Phone</h4>
-                    <p className="text-gray-600">+91 1234567890</p>
-                    <p className="text-gray-600">+91 0987654321</p>
+                    <p className="text-gray-600">-</p>
                   </div>
                 </div>
 
@@ -91,11 +89,7 @@ const ContactSection = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Address</h4>
-                    <p className="text-gray-600">
-                      123 Education Street<br />
-                      Pune, Maharashtra 411001<br />
-                      India
-                    </p>
+                    <p className="text-gray-600">-</p>
                   </div>
                 </div>
               </div>

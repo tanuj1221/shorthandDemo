@@ -1,5 +1,6 @@
 const connection = require("../config/db1");
 const fs = require('fs');
+const xlsx = require('xlsx');
 
 
 exports.loginInstitute = async (req, res) => {
@@ -552,7 +553,94 @@ exports.getPendingAmountStudentsList = async (req, res) => {
   }
 };
 
-
+// Export all students to Excel
+exports.downloadStudentsExcel = async (req, res) => {
+  try {
+    const instituteId = req.session.instituteId;
+    
+    const studentQuery = `
+      SELECT 
+        student_id, firstName, lastName, motherName, middleName, 
+        password, amount, batch_year, subjectsId,
+        CASE 
+          WHEN amount = 'paid' THEN 'paid'
+          WHEN amount = 'pending' THEN 'unpaid'
+          WHEN amount = 'waiting' THEN 'unpaid'
+          ELSE 'unpaid' 
+        END as payment_status
+      FROM student14 
+      WHERE instituteId = ?
+    `;
+    
+    const [students] = await connection.query(studentQuery, [instituteId]);
+    
+    // Fetch subjects
+    const [subjects] = await connection.query("SELECT subjectId, subject_name FROM subjectsDb");
+    const subjectMap = subjects.reduce((map, subject) => {
+      map[subject.subjectId] = subject.subject_name;
+      return map;
+    }, {});
+    
+    // Transform data for Excel
+    const excelData = students.map(student => {
+      let subjectNames = "No Subjects";
+      if (student.subjectsId) {
+        try {
+          let subjectIds = [];
+          if (typeof student.subjectsId === 'string') {
+            const cleanedIds = student.subjectsId
+              .replace(/[\[\]'"]/g, "")
+              .split(",")
+              .map(id => id.trim())
+              .filter(id => id !== "");
+            subjectIds = cleanedIds;
+          } else if (Array.isArray(student.subjectsId)) {
+            subjectIds = student.subjectsId;
+          }
+          
+          const mappedSubjects = subjectIds
+            .map(id => subjectMap[id] || `${id}`)
+            .filter(name => name);
+          
+          if (mappedSubjects.length > 0) {
+            subjectNames = mappedSubjects.join(", ");
+          }
+        } catch (error) {
+          subjectNames = "Error parsing subjects";
+        }
+      }
+      
+      return {
+        'Student ID': student.student_id,
+        'First Name': student.firstName,
+        'Last Name': student.lastName,
+        'Mother Name': student.motherName,
+        'Middle Name': student.middleName,
+        'Password': student.password,
+        'Payment Status': student.payment_status,
+        'Batch Year': student.batch_year,
+        'Subjects': subjectNames
+      };
+    });
+    
+    // Create workbook and worksheet
+    const worksheet = xlsx.utils.json_to_sheet(excelData);
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Students');
+    
+    // Generate buffer
+    const buffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    
+    // Set headers and send file
+    res.setHeader('Content-Disposition', 'attachment; filename=students.xlsx');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+    
+  } catch (err) {
+    console.error("Error generating Excel:", err);
+    res.status(500).send("Failed to generate Excel file");
+  }
+};
 
 //--------------------------------------------------------------------------------------------------------------------
 
