@@ -2,6 +2,25 @@ const connection = require("../config/db1");
 const fs = require('fs');
 const xlsx = require('xlsx');
 
+/**
+ * Helper function to strip data URI prefix from base64 images
+ * For .NET applications that need raw base64 without the prefix
+ */
+function stripDataUriPrefix(base64String) {
+  if (!base64String) return null;
+  
+  // If it starts with data:image, remove the prefix
+  if (base64String.startsWith('data:')) {
+    const commaIndex = base64String.indexOf(',');
+    if (commaIndex > 0) {
+      return base64String.substring(commaIndex + 1);
+    }
+  }
+  
+  // Already raw base64 or invalid
+  return base64String;
+}
+
 
 exports.loginInstitute = async (req, res) => {
   console.log("[DEBUG] Attempting institute login");
@@ -132,7 +151,12 @@ exports.getStudentsByInstitute = async (req, res) => {
   try {
     const [students] = await connection.query(studentQuery, [instituteId]);
     if (students.length > 0) {
-      res.json(students);
+      // Strip data URI prefix from images for .NET compatibility
+      const studentsWithRawBase64 = students.map(student => ({
+        ...student,
+        image: stripDataUriPrefix(student.image)
+      }));
+      res.json(studentsWithRawBase64);
     } else {
       res.status(404).send("No students found for this institute");
     }
@@ -472,7 +496,8 @@ exports.getstudentslist = async (req, res) => {
         ...student,
         subject_name: subjectNames,
         subjects: subjectNames,
-        payment_status: student.payment_status
+        payment_status: student.payment_status,
+        image: stripDataUriPrefix(student.image) // Strip data URI for .NET compatibility
       };
     });
     
@@ -552,7 +577,8 @@ exports.getPendingAmountStudentsList = async (req, res) => {
         ...student,
         subject_name: subjectNames,
         subjects: subjectNames,
-        payment_status: student.payment_status
+        payment_status: student.payment_status,
+        image: stripDataUriPrefix(student.image) // Strip data URI for .NET compatibility
       };
     });
     
@@ -984,6 +1010,9 @@ exports.getStudentById = async (req, res) => {
       subjectId: sub.subjectId,
       subject_name: sub.subject_name,
     }));
+
+    // Strip data URI prefix from image for .NET compatibility
+    student[0].image = stripDataUriPrefix(student[0].image);
 
     res.json(student[0]);
   } catch (err) {
