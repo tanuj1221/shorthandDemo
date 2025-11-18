@@ -160,26 +160,19 @@ const PhotoUploadStep = ({ handleFileChange, prevStep, handleSubmit }) => {
       crop.height
     );
 
-    // Convert canvas to blob and update preview
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      
-      const croppedFile = new File([blob], 'student-photo.jpg', {
-        type: 'image/jpeg',
-        lastModified: Date.now()
-      });
-
-      const previewUrl = URL.createObjectURL(blob);
-      setImagePreview(previewUrl);
-      
-      handleFileChange({
-        target: {
-          name: 'image',
-          files: [croppedFile],
-          value: previewUrl
-        }
-      });
-    }, 'image/jpeg', 0.9);
+    // Convert canvas to base64 (NOT blob URL!)
+    const base64Image = canvas.toDataURL('image/jpeg', 0.9);
+    
+    // Update preview with base64
+    setImagePreview(base64Image);
+    
+    // Send base64 to parent component
+    handleFileChange({
+      target: {
+        name: 'image',
+        value: base64Image  // ✅ Sending proper base64 with data URI
+      }
+    });
   };
 
   const resetCrop = () => {

@@ -211,6 +211,14 @@ const StudentRegistrationForm = () => {
     remTime: "300"
   };
 
+  // Debug: Log image format
+  if (submissionData.image) {
+    console.log('Image format check:');
+    console.log('- Starts with data:image?', submissionData.image.startsWith('data:image'));
+    console.log('- Image length:', submissionData.image.length);
+    console.log('- First 50 chars:', submissionData.image.substring(0, 50));
+  }
+
   try {
     const response = await axios.post('https://www.shorthandexam.in/registerstudent', submissionData, {
       withCredentials: true,

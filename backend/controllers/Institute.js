@@ -172,6 +172,17 @@ exports.registerStudent = async (req, res) => {
     email,
   } = req.body;
 
+  // Debug: Log image format received
+  if (image) {
+    console.log("Image received:");
+    console.log("- Type:", typeof image);
+    console.log("- Starts with data:image?", image.startsWith('data:image'));
+    console.log("- Length:", image.length);
+    console.log("- First 50 chars:", image.substring(0, 50));
+  } else {
+    console.log("No image received");
+  }
+
   try {
     // Get the next student_id by finding the maximum existing student_id
     const [maxIdResult] = await connection.query(
