@@ -16,6 +16,7 @@ const connection = require('./config/db1');
 const auth1 = require('./routes/isauthsti');
 const path = require('path');
 const Razorpay = require('razorpay');
+const { scheduleTimerReset } = require('./services/resetTimerService');
 
 const app = express();
 const PORT = 3001;
@@ -273,5 +274,9 @@ app.get(/^\/(?!api).*/, (_req, res) => {
 // Start Server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  
+  // Initialize timer reset scheduler
+  scheduleTimerReset();
+  console.log('✓ Timer reset scheduler initialized');
 });
 

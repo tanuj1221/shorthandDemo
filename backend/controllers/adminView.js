@@ -1512,3 +1512,28 @@ function processCSVFile(filePath) {
       });
   });
 }
+
+
+// ---------------------- TIMER RESET ----------------------
+const { resetStudentTimers } = require('../services/resetTimerService');
+
+exports.resetAllStudentTimers = async (req, res) => {
+  console.log('[ADMIN] Manual timer reset triggered');
+  
+  try {
+    const result = await resetStudentTimers();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Student timers reset successfully',
+      ...result
+    });
+  } catch (err) {
+    console.error('[ADMIN] Timer reset failed:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reset student timers',
+      error: err.message
+    });
+  }
+};
