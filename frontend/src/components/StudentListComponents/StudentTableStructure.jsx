@@ -139,8 +139,19 @@ const StudentTableStructure = ({
 
   // Payment status renderer
   const renderPaymentStatus = (student) => {
-    const isPaid = student.amount === 'paid' || student.payment_status === 'paid';
-    const statusText = isPaid ? 'PAID' : 'UNPAID';
+    const amount = student.amount || student.payment_status;
+    let statusText, statusColor;
+    
+    if (amount === 'paid') {
+      statusText = 'PAID';
+      statusColor = '#4caf50'; // green
+    } else if (amount === 'waiting') {
+      statusText = 'WAITING';
+      statusColor = '#ff9800'; // orange
+    } else {
+      statusText = 'UNPAID';
+      statusColor = '#f44336'; // red
+    }
 
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -149,13 +160,13 @@ const StudentTableStructure = ({
             width: 10,
             height: 10,
             borderRadius: '50%',
-            backgroundColor: isPaid ? '#4caf50' : '#f44336'
+            backgroundColor: statusColor
           }}
         />
         <Typography
           variant="body2"
           sx={{
-            color: isPaid ? '#4caf50' : '#f44336',
+            color: statusColor,
             fontWeight: 'bold',
             textTransform: 'uppercase'
           }}
@@ -236,6 +247,7 @@ const StudentTableStructure = ({
             >
               <MenuItem value="all">All Status</MenuItem>
               <MenuItem value="paid">Paid</MenuItem>
+              <MenuItem value="waiting">Waiting Approval</MenuItem>
               <MenuItem value="unpaid">Unpaid</MenuItem>
             </Select>
           </FormControl>
@@ -314,6 +326,8 @@ const StudentTableStructure = ({
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Last Name</TableCell>
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Password</TableCell>
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Start Date</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Expiry Date</TableCell>
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Batch Year</TableCell>
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Subject</TableCell>
             </TableRow>
@@ -344,6 +358,16 @@ const StudentTableStructure = ({
                 </TableCell>
                 <TableCell>
                   {renderPaymentStatus(student)}
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
+                    {student.batchStartDate || '-'}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
+                    {student.batchEndDate || '-'}
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   <Chip 

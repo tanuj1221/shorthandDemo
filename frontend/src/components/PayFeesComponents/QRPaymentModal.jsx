@@ -447,46 +447,6 @@ export const QRPaymentModal = ({
         </DialogTitle>
         
         <DialogContent dividers>
-          {/* Student Details Section */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Student Details
-            </Typography>
-            
-            <List dense sx={{ 
-              maxHeight: 300, 
-              overflow: 'auto', 
-              border: '1px solid #eee', 
-              borderRadius: 1,
-              bgcolor: 'background.paper'
-            }}>
-              {selectedStudentsDetails.map((student) => (
-                <ListItem key={student.id} divider>
-                  <ListItemText
-                    primary={
-                      <Typography variant="subtitle2" component="div" sx={{ fontWeight: 'medium' }}>
-                        {student.name} (ID: {student.instituteId})
-                      </Typography>
-                    }
-                    secondary={
-                      <Box component="span">
-                        <Typography component="span" variant="body2" display="block">
-                          Email: {student.email}
-                        </Typography>
-                        <Typography component="span" variant="body2" display="block">
-                          Contact: {student.contact}
-                        </Typography>
-                      </Box>
-                    }
-                    sx={{ py: 1 }}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-
-          <Divider sx={{ my: 2 }} />
-
           {/* Payment Information Section */}
           <Box sx={{ 
             display: 'flex', 
@@ -556,6 +516,65 @@ export const QRPaymentModal = ({
                 size="small"
               />
             </Box>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Student Details Section - Moved Below */}
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+              Selected Students ({selectedStudents.length})
+            </Typography>
+            
+            <List dense sx={{ 
+              maxHeight: 250, 
+              overflow: 'auto', 
+              border: '1px solid #e0e0e0', 
+              borderRadius: 1,
+              bgcolor: 'grey.50'
+            }}>
+              {selectedStudentsDetails.map((student, index) => (
+                <ListItem 
+                  key={student.id} 
+                  divider={index < selectedStudentsDetails.length - 1}
+                  sx={{ 
+                    '&:hover': { bgcolor: 'action.hover' },
+                    py: 1.5
+                  }}
+                >
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Chip 
+                          label={index + 1} 
+                          size="small" 
+                          color="primary" 
+                          sx={{ minWidth: 30 }}
+                        />
+                        <Typography variant="subtitle2" component="span" sx={{ fontWeight: 'bold' }}>
+                          {student.name}
+                        </Typography>
+                        <Chip 
+                          label={`ID: ${student.id}`} 
+                          size="small" 
+                          variant="outlined"
+                        />
+                      </Box>
+                    }
+                    secondary={
+                      <Box component="span" sx={{ mt: 0.5 }}>
+                        <Typography component="span" variant="body2" display="block" color="text.secondary">
+                          📧 {student.email}
+                        </Typography>
+                        <Typography component="span" variant="body2" display="block" color="text.secondary">
+                          📱 {student.contact}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
           </Box>
         </DialogContent>
 

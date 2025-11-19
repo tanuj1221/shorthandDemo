@@ -1043,7 +1043,7 @@ const FeesPayment = () => {
   const [students, setStudents] = useState([]);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [hybridModalOpen, setHybridModalOpen] = useState(false);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Fetch students from backend
   useEffect(() => {

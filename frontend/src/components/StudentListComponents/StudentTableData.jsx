@@ -48,16 +48,18 @@ const StudentTableData = () => {
 
   // Fixed helper function to use backend payment_status field
   const getPaymentStatus = (student) => {
-    // Use the payment_status field directly from backend
-    if (student.payment_status) {
-      return student.payment_status;
-    }
-    
-    // Fallback logic if payment_status is not available
+    // Check amount field first
     if (student.amount === 'paid') {
       return 'paid';
-    } else if (student.amount === 'pending' || student.amount === 'waiting' || !student.amount) {
+    } else if (student.amount === 'waiting') {
+      return 'waiting';
+    } else if (student.amount === 'pending' || !student.amount) {
       return 'unpaid';
+    }
+    
+    // Use payment_status field as fallback
+    if (student.payment_status) {
+      return student.payment_status;
     }
     
     // Default to unpaid
@@ -184,12 +186,23 @@ const StudentTableData = () => {
   // Fixed renderStatusChip function
   const renderStatusChip = (student) => {
     const paymentStatus = getPaymentStatus(student);
-    const isPaid = paymentStatus === 'paid';
+    
+    let label, color;
+    if (paymentStatus === 'paid') {
+      label = 'Paid';
+      color = 'success';
+    } else if (paymentStatus === 'waiting') {
+      label = 'Waiting Approval';
+      color = 'warning';
+    } else {
+      label = 'Unpaid';
+      color = 'error';
+    }
     
     return (
       <Chip
-        label={isPaid ? 'Paid' : 'Unpaid'}
-        color={isPaid ? 'success' : 'error'}
+        label={label}
+        color={color}
         size="small"
         variant="filled"
       />
@@ -201,27 +214,38 @@ const StudentTableData = () => {
     const doc = new jsPDF();
     doc.text('Student List', 14, 15);
     
-    const tableData = filteredStudents.map(student => [
-      student.student_id,
-      `${student.firstName} ${student.lastName}`,
-      student.motherName,
-      getPaymentStatus(student) === 'paid' ? 'Paid' : 'Unpaid',
-      student.subjects || 'No Subjects',
-      student.batch_year
-    ]);
+    const tableData = filteredStudents.map(student => {
+      const status = getPaymentStatus(student);
+      let statusText = 'Unpaid';
+      if (status === 'paid') statusText = 'Paid';
+      else if (status === 'waiting') statusText = 'Waiting Approval';
+      
+      return [
+        student.student_id,
+        `${student.firstName} ${student.lastName}`,
+        student.motherName,
+        statusText,
+        student.batchStartDate || '-',
+        student.batchEndDate || '-',
+        student.subjects || 'No Subjects',
+        student.batch_year
+      ];
+    });
     
     doc.autoTable({
-      head: [['ID', 'Name', "Mother's Name", 'Status', 'Subject', 'Batch Year']],
+      head: [['ID', 'Name', "Mother's Name", 'Status', 'Start Date', 'Expiry Date', 'Subject', 'Batch Year']],
       body: tableData,
       startY: 20,
-      styles: { fontSize: 8 },
+      styles: { fontSize: 7 },
       columnStyles: {
-        0: { cellWidth: 20 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 30 },
+        0: { cellWidth: 18 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 25 },
         3: { cellWidth: 15 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 30 }    
+        4: { cellWidth: 20 },
+        5: { cellWidth: 20 },
+        6: { cellWidth: 25 },
+        7: { cellWidth: 20 }    
       }
     });
     
@@ -234,15 +258,24 @@ const StudentTableData = () => {
     setLoading(true);
     
     // Prepare data with proper status formatting
-    const excelData = filteredStudents.map(student => ({
-      'Student ID': student.student_id,
-      'First Name': student.firstName,
-      'Last Name': student.lastName,
-      'Mother Name': student.motherName,
-      'Payment Status': getPaymentStatus(student) === 'paid' ? 'Paid' : 'Unpaid',
-      'Subjects': student.subjects || 'No Subjects',
-      'Batch Year': student.batch_year
-    }));
+    const excelData = filteredStudents.map(student => {
+      const status = getPaymentStatus(student);
+      let statusText = 'Unpaid';
+      if (status === 'paid') statusText = 'Paid';
+      else if (status === 'waiting') statusText = 'Waiting Approval';
+      
+      return {
+        'Student ID': student.student_id,
+        'First Name': student.firstName,
+        'Last Name': student.lastName,
+        'Mother Name': student.motherName,
+        'Payment Status': statusText,
+        'Start Date': student.batchStartDate || '-',
+        'Expiry Date': student.batchEndDate || '-',
+        'Subjects': student.subjects || 'No Subjects',
+        'Batch Year': student.batch_year
+      };
+    });
     
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();

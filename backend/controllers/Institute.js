@@ -438,10 +438,11 @@ exports.getstudentslist = async (req, res) => {
       SELECT 
         student_id, firstName, lastName, motherName, middleName, 
         amount, batch_year, subjectsId, image,
+        batchStartDate, batchEndDate,
         CASE 
           WHEN amount = 'paid' THEN 'paid'
+          WHEN amount = 'waiting' THEN 'waiting'
           WHEN amount = 'pending' THEN 'unpaid'
-          WHEN amount = 'waiting' THEN 'unpaid'
           ELSE 'unpaid' 
         END as payment_status
       FROM student14 
@@ -519,10 +520,11 @@ exports.getPendingAmountStudentsList = async (req, res) => {
       SELECT 
         student_id, firstName, lastName, motherName, middleName, 
         password, amount, batch_year, subjectsId, image,
+        batchStartDate, batchEndDate,
         CASE 
           WHEN amount = 'paid' THEN 'paid'
+          WHEN amount = 'waiting' THEN 'waiting'
           WHEN amount = 'pending' THEN 'unpaid'
-          WHEN amount = 'waiting' THEN 'unpaid'
           ELSE 'unpaid' 
         END as payment_status
       FROM student14 
