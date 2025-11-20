@@ -38,8 +38,155 @@ import {
   ContentCopy as CopyIcon,
   ArrowBack as BackIcon,
   SelectAll as SelectAllIcon,
-  Home as HomeIcon
+  Home as HomeIcon,
+  ExpandMore as ExpandMoreIcon,
+  ChevronRight as ChevronRightIcon,
+  FolderOpen as FolderOpenIcon
 } from '@mui/icons-material';
+
+// Recursive component to render folder tree
+const FolderTreeView = ({ 
+  tree, 
+  expandedFolders, 
+  toggleFolder, 
+  selectedFileIds, 
+  handleFileCheckbox, 
+  showLinkDialog, 
+  formatFileSize, 
+  formatDate,
+  basePath,
+  level = 0 
+}) => {
+  const indent = level * 24;
+  
+  return (
+    <Box>
+      {/* Render root files first */}
+      {tree.files.map((file) => (
+        <Box
+          key={file.id}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            py: 1,
+            px: 2,
+            pl: indent + 2,
+            '&:hover': { bgcolor: 'action.hover' },
+            borderRadius: 1,
+            mb: 0.5
+          }}
+        >
+          <Checkbox
+            size="small"
+            checked={selectedFileIds.includes(file.id)}
+            onChange={() => handleFileCheckbox(file.id)}
+            sx={{ mr: 1 }}
+          />
+          <FileIcon sx={{ fontSize: 20, color: 'text.secondary', mr: 1 }} />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body2" noWrap>
+              {file.original_name}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {formatFileSize(file.file_size)} • {formatDate(file.uploaded_at)}
+            </Typography>
+          </Box>
+          <Tooltip title="View & Copy Link">
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => showLinkDialog(file.file_url)}
+            >
+              <CopyIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      ))}
+      
+      {/* Render subfolders */}
+      {Object.keys(tree.folders).sort().map((folderName) => {
+        const folderPath = basePath ? `${basePath}/${folderName}` : folderName;
+        const isExpanded = expandedFolders[folderPath];
+        const subTree = tree.folders[folderName];
+        const fileCount = countFiles(subTree);
+        
+        return (
+          <Box key={folderPath}>
+            {/* Folder header */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                py: 1,
+                px: 2,
+                pl: indent + 2,
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'action.hover' },
+                borderRadius: 1,
+                mb: 0.5
+              }}
+              onClick={() => toggleFolder(folderPath)}
+            >
+              {isExpanded ? (
+                <ExpandMoreIcon sx={{ fontSize: 20, mr: 0.5, color: 'text.secondary' }} />
+              ) : (
+                <ChevronRightIcon sx={{ fontSize: 20, mr: 0.5, color: 'text.secondary' }} />
+              )}
+              {isExpanded ? (
+                <FolderOpenIcon sx={{ fontSize: 20, color: 'warning.main', mr: 1 }} />
+              ) : (
+                <FolderIcon sx={{ fontSize: 20, color: 'warning.main', mr: 1 }} />
+              )}
+              <Typography variant="body2" fontWeight="medium" sx={{ flex: 1 }}>
+                {folderName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {fileCount} {fileCount === 1 ? 'file' : 'files'}
+              </Typography>
+            </Box>
+            
+            {/* Folder contents (when expanded) */}
+            {isExpanded && (
+              <FolderTreeView
+                tree={subTree}
+                expandedFolders={expandedFolders}
+                toggleFolder={toggleFolder}
+                selectedFileIds={selectedFileIds}
+                handleFileCheckbox={handleFileCheckbox}
+                showLinkDialog={showLinkDialog}
+                formatFileSize={formatFileSize}
+                formatDate={formatDate}
+                basePath={folderPath}
+                level={level + 1}
+              />
+            )}
+          </Box>
+        );
+      })}
+    </Box>
+  );
+};
+
+// Helper function to count total files in a tree
+const countFiles = (tree) => {
+  let count = tree.files.length;
+  Object.values(tree.folders).forEach(subTree => {
+    count += countFiles(subTree);
+  });
+  return count;
+};
+
+// Helper function to get all folder paths recursively
+const getAllFolderPaths = (folders, basePath = '') => {
+  let paths = [];
+  Object.keys(folders).forEach(folderName => {
+    const folderPath = basePath ? `${basePath}/${folderName}` : folderName;
+    paths.push(folderPath);
+    const subPaths = getAllFolderPaths(folders[folderName].folders, folderPath);
+    paths = paths.concat(subPaths);
+  });
+  return paths;
+};
 
 const Storage = () => {
   const [folders, setFolders] = useState([]);
@@ -54,7 +201,9 @@ const Storage = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [selectedFileLink, setSelectedFileLink] = useState('');
+  const [expandedFolders, setExpandedFolders] = useState({});
   const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
 
   useEffect(() => {
     fetchStorage();
@@ -103,14 +252,43 @@ const Storage = () => {
     }
   };
 
-  const uploadFiles = async (files) => {
+  const handleFolderSelect = async (event) => {
+    const files = Array.from(event.target.files);
+    if (files.length > 0) {
+      await uploadFiles(files, true);
+    }
+  };
+
+  const uploadFiles = async (files, isFolder = false) => {
     if (!currentFolder) return;
 
     const formData = new FormData();
     formData.append('folderId', currentFolder.id);
-    files.forEach(file => {
-      formData.append('files', file);
-    });
+    
+    if (isFolder) {
+      // For folder uploads, preserve directory structure
+      files.forEach(file => {
+        // Get relative path from webkitRelativePath
+        const relativePath = file.webkitRelativePath;
+        if (relativePath) {
+          // Extract directory path (remove filename)
+          const pathParts = relativePath.split('/');
+          pathParts.pop(); // Remove filename
+          const dirPath = pathParts.slice(1).join('/'); // Remove root folder name
+          
+          // Use fieldname to indicate subfolder
+          const fieldName = dirPath ? `files-${dirPath}` : 'files';
+          formData.append(fieldName, file);
+        } else {
+          formData.append('files', file);
+        }
+      });
+    } else {
+      // Regular file upload
+      files.forEach(file => {
+        formData.append('files', file);
+      });
+    }
 
     try {
       setUploading(true);
@@ -254,14 +432,23 @@ const Storage = () => {
           <Typography variant="h4" fontWeight="bold">
             📁 File Storage
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateFolderOpen(true)}
-          >
-            Create Folder
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setCreateFolderOpen(true)}
+            >
+              Create Folder
+            </Button>
+          </Box>
         </Box>
+
+        {/* Info Box */}
+        <Paper sx={{ p: 2, mb: 3, bgcolor: 'info.lighter', border: '1px solid', borderColor: 'info.light' }}>
+          <Typography variant="body2" color="info.dark">
+            💡 <strong>Tip:</strong> Click on a folder to open it, then you can upload files or entire folders (like .NET publish folders) with preserved directory structure.
+          </Typography>
+        </Paper>
 
         {folders.length === 0 ? (
           <Paper sx={{ p: 6, textAlign: 'center' }}>
@@ -284,7 +471,7 @@ const Storage = () => {
         ) : (
           <Grid container spacing={3}>
             {folders.map((folder) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={folder.id}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={folder.id}>
                 <Card
                   sx={{
                     cursor: 'pointer',
@@ -360,6 +547,47 @@ const Storage = () => {
 
   // Folder Content View
   const files = currentFolder.files || [];
+  
+  // Build folder tree structure from files
+  const buildFolderTree = (files) => {
+    const tree = { folders: {}, files: [] };
+    
+    files.forEach(file => {
+      if (!file.file_path || file.file_path.trim() === '') {
+        // Root level file
+        tree.files.push(file);
+      } else {
+        // File in subfolder
+        const pathParts = file.file_path.split('/').filter(p => p.trim() !== '');
+        let currentLevel = tree.folders;
+        
+        // Build nested folder structure
+        pathParts.forEach((part, index) => {
+          if (!currentLevel[part]) {
+            currentLevel[part] = { folders: {}, files: [] };
+          }
+          
+          // If this is the last part, add the file
+          if (index === pathParts.length - 1) {
+            currentLevel[part].files.push(file);
+          } else {
+            currentLevel = currentLevel[part].folders;
+          }
+        });
+      }
+    });
+    
+    return tree;
+  };
+  
+  const folderTree = buildFolderTree(files);
+  
+  const toggleFolder = (path) => {
+    setExpandedFolders(prev => ({
+      ...prev,
+      [path]: !prev[path]
+    }));
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -398,6 +626,24 @@ const Storage = () => {
               >
                 {selectedFileIds.length === files.length ? 'Deselect All' : 'Select All'}
               </Button>
+              {Object.keys(folderTree.folders).length > 0 && (
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    const allFolderPaths = getAllFolderPaths(folderTree.folders);
+                    const allExpanded = allFolderPaths.every(path => expandedFolders[path]);
+                    if (allExpanded) {
+                      setExpandedFolders({});
+                    } else {
+                      const expanded = {};
+                      allFolderPaths.forEach(path => expanded[path] = true);
+                      setExpandedFolders(expanded);
+                    }
+                  }}
+                >
+                  {Object.values(expandedFolders).some(v => v) ? 'Collapse All' : 'Expand All'}
+                </Button>
+              )}
               {selectedFileIds.length > 0 && (
                 <Button
                   variant="contained"
@@ -421,53 +667,91 @@ const Storage = () => {
         </Button>
       </Box>
 
-      {/* Drag & Drop Upload Area */}
-      <Paper
-        sx={{
-          p: 4,
-          mb: 3,
-          border: '2px dashed',
-          borderColor: dragActive ? 'primary.main' : 'grey.300',
-          bgcolor: dragActive ? 'action.hover' : 'background.paper',
-          textAlign: 'center',
-          cursor: 'pointer',
-          transition: 'all 0.2s'
-        }}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          onChange={handleFileSelect}
-          style={{ display: 'none' }}
-        />
-        {uploading ? (
-          <Box>
-            <CircularProgress sx={{ mb: 2 }} />
-            <Typography>Uploading files...</Typography>
-          </Box>
-        ) : (
-          <Box>
-            <UploadIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
+      {/* Upload Options */}
+      <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+        📤 Upload Options
+      </Typography>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper
+            sx={{
+              p: 3,
+              border: '2px dashed',
+              borderColor: dragActive ? 'primary.main' : 'grey.300',
+              bgcolor: dragActive ? 'action.hover' : 'background.paper',
+              textAlign: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' }
+            }}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+            />
+            {uploading ? (
+              <Box>
+                <CircularProgress sx={{ mb: 2 }} />
+                <Typography>Uploading...</Typography>
+              </Box>
+            ) : (
+              <Box>
+                <FileIcon sx={{ fontSize: 50, color: 'primary.main', mb: 1 }} />
+                <Typography variant="h6" gutterBottom>
+                  Upload Files
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Drag & drop or click to browse
+                </Typography>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper
+            sx={{
+              p: 3,
+              border: '2px dashed',
+              borderColor: 'secondary.main',
+              textAlign: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              '&:hover': { borderColor: 'secondary.dark', bgcolor: 'action.hover' }
+            }}
+            onClick={() => folderInputRef.current?.click()}
+          >
+            <input
+              ref={folderInputRef}
+              type="file"
+              {...({ webkitdirectory: '', directory: '' })}
+              multiple
+              onChange={handleFolderSelect}
+              style={{ display: 'none' }}
+            />
+            <FolderIcon sx={{ fontSize: 50, color: 'secondary.main', mb: 1 }} />
             <Typography variant="h6" gutterBottom>
-              Drag & Drop files here
+              Upload Folder
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              or click to browse files
+              Upload entire folder with structure
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Maximum file size: 50MB
+              Perfect for .NET publish folders
             </Typography>
-          </Box>
-        )}
-      </Paper>
+          </Paper>
+        </Grid>
+      </Grid>
 
-      {/* Files Table */}
+      {/* Files Tree View */}
       {files.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <FileIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
@@ -479,88 +763,69 @@ const Storage = () => {
           </Typography>
         </Paper>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={selectedFileIds.length === files.length}
-                    indeterminate={selectedFileIds.length > 0 && selectedFileIds.length < files.length}
-                    onChange={handleSelectAll}
-                  />
-                </TableCell>
-                <TableCell>File Name</TableCell>
-                <TableCell>Size</TableCell>
-                <TableCell>Uploaded</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {files.map((file) => (
-                <TableRow
-                  key={file.id}
-                  hover
-                  selected={selectedFileIds.includes(file.id)}
-                >
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      checked={selectedFileIds.includes(file.id)}
-                      onChange={() => handleFileCheckbox(file.id)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <FileIcon color="action" />
-                      <Typography>{file.original_name}</Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>{formatFileSize(file.file_size)}</TableCell>
-                  <TableCell>{formatDate(file.uploaded_at)}</TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="View & Copy Link">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => showLinkDialog(file.file_url)}
-                      >
-                        <CopyIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <Paper sx={{ p: 2 }}>
+          <Typography variant="h6" sx={{ mb: 2, px: 1 }}>
+            📂 Folder Contents
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
+          
+          {/* Render folder tree */}
+          <FolderTreeView 
+            tree={folderTree}
+            expandedFolders={expandedFolders}
+            toggleFolder={toggleFolder}
+            selectedFileIds={selectedFileIds}
+            handleFileCheckbox={handleFileCheckbox}
+            showLinkDialog={showLinkDialog}
+            formatFileSize={formatFileSize}
+            formatDate={formatDate}
+            basePath=""
+          />
+        </Paper>
       )}
 
       {/* Link Preview Dialog */}
       <Dialog open={linkDialogOpen} onClose={() => setLinkDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>File Link</DialogTitle>
+        <DialogTitle>📎 File Link</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'bold' }}>
             Full URL:
           </Typography>
-          <Paper sx={{ p: 2, mb: 2, bgcolor: 'grey.100', wordBreak: 'break-all' }}>
+          <Paper sx={{ p: 2, mb: 2, bgcolor: 'grey.100', wordBreak: 'break-all', position: 'relative' }}>
             <Typography variant="body2" fontFamily="monospace">
               {selectedFileLink}
             </Typography>
+            <IconButton
+              size="small"
+              sx={{ position: 'absolute', top: 8, right: 8 }}
+              onClick={() => copyToClipboard(selectedFileLink)}
+            >
+              <CopyIcon fontSize="small" />
+            </IconButton>
           </Paper>
 
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Clean Path (for easy reference):
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Clean Path:
           </Typography>
-          <Paper sx={{ p: 2, mb: 2, bgcolor: 'grey.100', wordBreak: 'break-all' }}>
-            <Typography variant="body2" fontFamily="monospace" color="primary">
+          <Paper sx={{ p: 2, mb: 2, bgcolor: 'primary.50', wordBreak: 'break-all', position: 'relative' }}>
+            <Typography variant="body2" fontFamily="monospace" color="primary.main" sx={{ fontWeight: 'bold' }}>
               {getCleanPath(selectedFileLink)}
             </Typography>
+            <IconButton
+              size="small"
+              sx={{ position: 'absolute', top: 8, right: 8 }}
+              onClick={() => copyToClipboard(getCleanPath(selectedFileLink))}
+            >
+              <CopyIcon fontSize="small" />
+            </IconButton>
           </Paper>
 
-          <Typography variant="caption" color="text.secondary">
-            💡 Tip: The filename is preserved as uploaded (spaces replaced with underscores).
-            You can easily construct links like: /storage/folder_1/myfile.pdf
-          </Typography>
+          <Box sx={{ p: 2, bgcolor: 'info.lighter', borderRadius: 1, border: '1px solid', borderColor: 'info.light' }}>
+            <Typography variant="caption" color="info.dark">
+              💡 <strong>Tip:</strong> Filenames are sanitized for URLs (spaces → underscores, special chars removed).
+              You can manually construct links like: <code>/storage/folder_1/my_file.pdf</code>
+            </Typography>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setLinkDialogOpen(false)}>Close</Button>

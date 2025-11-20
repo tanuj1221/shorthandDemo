@@ -2,47 +2,25 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Storage configuration
+// Simple storage - just use a temp folder, we'll move files in the controller
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const folderId = req.body.folderId;
-    const uploadPath = path.join(__dirname, '../storage', `folder_${folderId}`);
+    const tempPath = path.join(__dirname, '../storage/temp');
     
-    // Create folder if it doesn't exist
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
+    // Create temp folder if it doesn't exist
+    if (!fs.existsSync(tempPath)) {
+      fs.mkdirSync(tempPath, { recursive: true });
     }
     
-    cb(null, uploadPath);
+    cb(null, tempPath);
   },
   filename: function (req, file, cb) {
-    // Use original filename directly
-    // Replace spaces with underscores and remove special characters for URL safety
-    const sanitizedName = file.originalname
-      .replace(/\s+/g, '_')  // Replace spaces with underscores
-      .replace(/[^a-zA-Z0-9._-]/g, ''); // Remove special characters except . _ -
+    // Use timestamp + original filename to avoid conflicts
+    const uniqueName = Date.now() + '_' + file.originalname
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9._-]/g, '');
     
-    // Check if file already exists
-    const folderId = req.body.folderId;
-    const uploadPath = path.join(__dirname, '../storage', `folder_${folderId}`);
-    const filePath = path.join(uploadPath, sanitizedName);
-    
-    // If file exists, add a number suffix
-    if (fs.existsSync(filePath)) {
-      const ext = path.extname(sanitizedName);
-      const nameWithoutExt = path.basename(sanitizedName, ext);
-      let counter = 1;
-      let newName = `${nameWithoutExt}_(${counter})${ext}`;
-      
-      while (fs.existsSync(path.join(uploadPath, newName))) {
-        counter++;
-        newName = `${nameWithoutExt}_(${counter})${ext}`;
-      }
-      
-      cb(null, newName);
-    } else {
-      cb(null, sanitizedName);
-    }
+    cb(null, uniqueName);
   }
 });
 

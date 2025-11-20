@@ -10,8 +10,8 @@ router.get('/structure', isAuthenticatedAdmin, storageController.getStorageStruc
 // Create folder
 router.post('/folder', isAuthenticatedAdmin, storageController.createFolder);
 
-// Upload files to folder
-router.post('/upload', isAuthenticatedAdmin, upload.array('files', 20), storageController.uploadFiles);
+// Upload files to folder (accepts any field names for folder uploads)
+router.post('/upload', isAuthenticatedAdmin, upload.any(), storageController.uploadFiles);
 
 // Get files in folder
 router.get('/folder/:folderId/files', isAuthenticatedAdmin, storageController.getFolderFiles);
