@@ -22,7 +22,7 @@ const PassageForm = ({ formData, handleChange, handleSubmit, handleError }) => {
       formDataToSend.append('answer', formData.answer);
       formDataToSend.append('audioFile', formData.audioFile);
 
-      const response = await fetch('http://localhost:3001/submit-audio', {
+      const response = await fetch('https://www.shorthandexam.in/submit-audio', {
         method: 'POST',
         credentials: 'include',
         body: formDataToSend,

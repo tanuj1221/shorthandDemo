@@ -16,7 +16,7 @@ const ResetButtons = () => {
     setMessage({ text: '', type: '' });
 
     try {
-      const response = await axios.post('http://localhost:3001/reset-timers', {}, {
+      const response = await axios.post('https://www.shorthandexam.in/reset-timers', {}, {
         withCredentials: true
       });
 

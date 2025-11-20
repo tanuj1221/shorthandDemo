@@ -8,7 +8,7 @@ function Approve() {
   const [selectedStudents, setSelectedStudents] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/approve')
+    fetch('https://www.shorthandexam.in/approve')
       .then((res) => res.json())
       .then((data) => setStudents(data))
       .catch((err) => console.error('Error fetching students:', err));
@@ -23,7 +23,7 @@ function Approve() {
   };
 
   const handleApprove = (studentId) => {
-    fetch('http://localhost:3001/approved_student', {
+    fetch('https://www.shorthandexam.in/approved_student', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ student_id: studentId }),
@@ -41,7 +41,7 @@ function Approve() {
   };
 
   const handleReject = (studentId) => {
-    fetch('http://localhost:3001/rejected_student', {
+    fetch('https://www.shorthandexam.in/rejected_student', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ student_id: studentId }),

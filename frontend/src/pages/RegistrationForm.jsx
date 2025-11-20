@@ -220,7 +220,7 @@ const StudentRegistrationForm = () => {
   }
 
   try {
-    const response = await axios.post('http://localhost:3001/registerstudent', submissionData, {
+    const response = await axios.post('https://www.shorthandexam.in/registerstudent', submissionData, {
       withCredentials: true,
     });
     alert('Student registered successfully!');

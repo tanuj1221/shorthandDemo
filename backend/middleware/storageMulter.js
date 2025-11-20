@@ -15,10 +15,9 @@ const storage = multer.diskStorage({
     cb(null, tempPath);
   },
   filename: function (req, file, cb) {
-    // Use timestamp + original filename to avoid conflicts
-    const uniqueName = Date.now() + '_' + file.originalname
-      .replace(/\s+/g, '_')
-      .replace(/[^a-zA-Z0-9._-]/g, '');
+    // Use original filename, spaces will be URL encoded as %20
+    const uniqueName = file.originalname
+      .replace(/[^a-zA-Z0-9._\s-]/g, '');
     
     cb(null, uniqueName);
   }

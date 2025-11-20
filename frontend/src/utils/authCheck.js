@@ -7,7 +7,7 @@ import axios from 'axios';
 export const checkAuthSession = async () => {
   try {
     // Try to fetch a protected endpoint to verify session
-    const response = await axios.get('http://localhost:3001/check-session', {
+    const response = await axios.get('https://www.shorthandexam.in/check-session', {
       withCredentials: true,
       timeout: 5000 // 5 second timeout
     });

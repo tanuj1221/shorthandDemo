@@ -25,7 +25,7 @@ function StudentStatusDashboard({ studentData }) {
  useEffect(() => {
       const fetchData = async () => {
         try {
-          const response = await fetch('http://localhost:3001/student/status-counts'); // Adjust this URL as needed
+          const response = await fetch('https://www.shorthandexam.in/student/status-counts'); // Adjust this URL as needed
           if (!response.ok) throw new Error('Failed to fetch data');
           
           const result = await response.json();

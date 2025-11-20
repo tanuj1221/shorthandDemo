@@ -234,10 +234,10 @@ exports.uploadFiles = async (req, res) => {
       // Get the relative path from fieldname
       const relativePath = file.fieldname === 'files' ? '' : file.fieldname.replace('files-', '');
       
-      // Sanitize original filename
+      // Sanitize original filename - remove only file system unsafe characters
       const sanitizedName = file.originalname
-        .replace(/\s+/g, '_')
-        .replace(/[^a-zA-Z0-9._-]/g, '');
+        .replace(/[<>:"|?*]/g, '') // Remove file system unsafe characters only
+        .trim();
       
       // Determine final file path
       const targetDir = relativePath 
@@ -280,8 +280,11 @@ exports.uploadFiles = async (req, res) => {
       // Construct file path for URL
       const filePath = relativePath ? `${relativePath}/${finalFileName}` : finalFileName;
       
-      // Generate file URL using full folder path
-      const fileUrl = `${BASE_URL}/storage/${folderFullPath}/${filePath}`;
+      // Generate file URL using full folder path with proper encoding
+      // Encode each path component separately to preserve path structure
+      const encodedFolderPath = folderFullPath.split('/').map(encodeURIComponent).join('/');
+      const encodedFilePath = filePath.split('/').map(encodeURIComponent).join('/');
+      const fileUrl = `${BASE_URL}/storage/${encodedFolderPath}/${encodedFilePath}`;
       
       // Save new file info to database
       const [result] = await connection.query(

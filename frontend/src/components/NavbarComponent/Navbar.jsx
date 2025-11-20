@@ -17,7 +17,7 @@ const Navbar = () => {
     const fetchInstituteDetails = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('http://localhost:3001/institutedetails', {
+        const response = await fetch('https://www.shorthandexam.in/institutedetails', {
           method: 'GET',
           credentials: 'include'
         });
@@ -69,7 +69,7 @@ const Navbar = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/logoutinsti', {
+      const response = await fetch('https://www.shorthandexam.in/logoutinsti', {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -160,14 +160,12 @@ const Navbar = () => {
             >
               Pay Fees
             </Link>
-            <a
-              href="https://www.shorthandexam.in/storage/publish/publish.htm"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link 
+              to="/dashboard/overview" 
               className="px-2 xl:px-3 py-2 text-sm text-gray-700 hover:text-indigo-600 font-medium transition-colors whitespace-nowrap"
             >
               Download
-            </a>
+            </Link>
             <Link 
               to="/dashboard/passages" 
               className="px-2 xl:px-3 py-2 text-sm text-gray-700 hover:text-indigo-600 font-medium transition-colors whitespace-nowrap"
@@ -223,15 +221,13 @@ const Navbar = () => {
                   >
                     Pay Fees
                   </Link>
-                  <a
-                    href="https://www.shorthandexam.in/storage/publish/publish.htm"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link 
+                    to="/dashboard/overview" 
                     className="block px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
                     onClick={closeMobileMenu}
                   >
                     Download Demo
-                  </a>
+                  </Link>
                   <Link 
                     to="/dashboard/passages" 
                     className="block px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
@@ -307,15 +303,13 @@ const Navbar = () => {
                   >
                     💳 Pay Fees
                   </Link>
-                  <a
-                    href="https://www.shorthandexam.in/storage/publish/publish.htm"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link 
+                    to="/dashboard/overview" 
                     className="block px-4 py-3 text-sm hover:bg-gray-100 transition-colors"
                     onClick={closeMobileMenu}
                   >
                     ⬇️ Download Demo
-                  </a>
+                  </Link>
                   <Link 
                     to="/dashboard/passages" 
                     className="block px-4 py-3 text-sm hover:bg-gray-100 transition-colors"
