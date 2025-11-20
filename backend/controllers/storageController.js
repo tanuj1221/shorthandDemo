@@ -24,7 +24,7 @@ const generateSlug = (name) => {
 };
 
 /**
- * Get all folders and files structure
+ * Get all folders and files structure (hierarchical)
  */
 exports.getStorageStructure = async (req, res) => {
   try {
@@ -36,11 +36,18 @@ exports.getStorageStructure = async (req, res) => {
       'SELECT * FROM storage_files ORDER BY uploaded_at DESC'
     );
     
-    // Group files by folder
-    const structure = folders.map(folder => ({
-      ...folder,
-      files: files.filter(file => file.folder_id === folder.id)
-    }));
+    // Build hierarchical structure
+    const buildHierarchy = (parentId = null) => {
+      return folders
+        .filter(folder => folder.parent_id === parentId)
+        .map(folder => ({
+          ...folder,
+          files: files.filter(file => file.folder_id === folder.id),
+          subfolders: buildHierarchy(folder.id)
+        }));
+    };
+    
+    const structure = buildHierarchy(null);
     
     res.json({
       success: true,
@@ -57,10 +64,32 @@ exports.getStorageStructure = async (req, res) => {
 };
 
 /**
+ * Get full folder path (for nested folders)
+ */
+const getFolderPath = async (folderId) => {
+  const pathParts = [];
+  let currentId = folderId;
+  
+  while (currentId) {
+    const [folders] = await connection.query(
+      'SELECT id, slug, parent_id FROM storage_folders WHERE id = ?',
+      [currentId]
+    );
+    
+    if (folders.length === 0) break;
+    
+    pathParts.unshift(folders[0].slug);
+    currentId = folders[0].parent_id;
+  }
+  
+  return pathParts.join('/');
+};
+
+/**
  * Create a new folder
  */
 exports.createFolder = async (req, res) => {
-  const { folderName, description } = req.body;
+  const { folderName, description, parentId } = req.body;
   
   if (!folderName || folderName.trim() === '') {
     return res.status(400).json({
@@ -70,12 +99,27 @@ exports.createFolder = async (req, res) => {
   }
   
   try {
+    // If parentId is provided, verify it exists
+    if (parentId) {
+      const [parentFolder] = await connection.query(
+        'SELECT id FROM storage_folders WHERE id = ?',
+        [parentId]
+      );
+      
+      if (parentFolder.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Parent folder not found'
+        });
+      }
+    }
+    
     const slug = generateSlug(folderName);
     
-    // Check if slug already exists
+    // Check if slug already exists in the same parent
     const [existing] = await connection.query(
-      'SELECT id FROM storage_folders WHERE slug = ?',
-      [slug]
+      'SELECT id FROM storage_folders WHERE slug = ? AND parent_id <=> ?',
+      [slug, parentId || null]
     );
     
     // If slug exists, append a number
@@ -85,8 +129,8 @@ exports.createFolder = async (req, res) => {
       while (true) {
         const testSlug = `${slug}_${counter}`;
         const [test] = await connection.query(
-          'SELECT id FROM storage_folders WHERE slug = ?',
-          [testSlug]
+          'SELECT id FROM storage_folders WHERE slug = ? AND parent_id <=> ?',
+          [testSlug, parentId || null]
         );
         if (test.length === 0) {
           finalSlug = testSlug;
@@ -98,12 +142,14 @@ exports.createFolder = async (req, res) => {
     
     // Create folder in database
     const [result] = await connection.query(
-      'INSERT INTO storage_folders (name, slug, description, created_at) VALUES (?, ?, ?, NOW())',
-      [folderName.trim(), finalSlug, description || '']
+      'INSERT INTO storage_folders (name, slug, description, parent_id, created_at) VALUES (?, ?, ?, ?, NOW())',
+      [folderName.trim(), finalSlug, description || '', parentId || null]
     );
     
-    // Create physical folder using slug
-    const folderPath = path.join(STORAGE_BASE, finalSlug);
+    // Get full path for physical folder
+    const fullPath = await getFolderPath(result.insertId);
+    const folderPath = path.join(STORAGE_BASE, fullPath);
+    
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
     }
@@ -111,7 +157,8 @@ exports.createFolder = async (req, res) => {
     res.json({
       success: true,
       message: 'Folder created successfully',
-      folderId: result.insertId
+      folderId: result.insertId,
+      path: fullPath
     });
   } catch (err) {
     console.error('Error creating folder:', err);
@@ -177,6 +224,9 @@ exports.uploadFiles = async (req, res) => {
       folder.slug = slug;
     }
     
+    // Get full folder path (including parent folders)
+    const folderFullPath = await getFolderPath(folder.id);
+    
     const uploadedFiles = [];
     
     for (const file of files) {
@@ -190,40 +240,49 @@ exports.uploadFiles = async (req, res) => {
       
       // Determine final file path
       const targetDir = relativePath 
-        ? path.join(STORAGE_BASE, folder.slug, relativePath)
-        : path.join(STORAGE_BASE, folder.slug);
+        ? path.join(STORAGE_BASE, folderFullPath, relativePath)
+        : path.join(STORAGE_BASE, folderFullPath);
       
       // Create directory if needed
       if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir, { recursive: true });
       }
       
-      // Check if file exists and add counter if needed
-      let finalFileName = sanitizedName;
-      let targetPath = path.join(targetDir, finalFileName);
+      // Use sanitized filename
+      const finalFileName = sanitizedName;
+      const targetPath = path.join(targetDir, finalFileName);
       
-      if (fs.existsSync(targetPath)) {
-        const ext = path.extname(sanitizedName);
-        const nameWithoutExt = path.basename(sanitizedName, ext);
-        let counter = 1;
+      // Check if file already exists in database
+      const [existingFiles] = await connection.query(
+        `SELECT id FROM storage_files 
+         WHERE folder_id = ? AND stored_name = ? AND (file_path <=> ?)`,
+        [folderId, finalFileName, relativePath || null]
+      );
+      
+      // If file exists, delete the old one from disk and database
+      if (existingFiles.length > 0) {
+        // Delete old file from disk if it exists
+        if (fs.existsSync(targetPath)) {
+          fs.unlinkSync(targetPath);
+        }
         
-        do {
-          finalFileName = `${nameWithoutExt}_(${counter})${ext}`;
-          targetPath = path.join(targetDir, finalFileName);
-          counter++;
-        } while (fs.existsSync(targetPath));
+        // Delete old file record from database
+        await connection.query(
+          'DELETE FROM storage_files WHERE id = ?',
+          [existingFiles[0].id]
+        );
       }
       
-      // Move file from temp to target location
+      // Move new file from temp to target location
       fs.renameSync(file.path, targetPath);
       
       // Construct file path for URL
       const filePath = relativePath ? `${relativePath}/${finalFileName}` : finalFileName;
       
-      // Generate file URL using folder slug
-      const fileUrl = `${req.protocol}://${req.get('host')}/storage/${folder.slug}/${filePath}`;
+      // Generate file URL using full folder path
+      const fileUrl = `${req.protocol}://${req.get('host')}/storage/${folderFullPath}/${filePath}`;
       
-      // Save file info to database
+      // Save new file info to database
       const [result] = await connection.query(
         `INSERT INTO storage_files 
         (folder_id, original_name, stored_name, file_path, file_size, mime_type, file_url, uploaded_at) 
@@ -346,7 +405,7 @@ exports.deleteFolder = async (req, res) => {
   try {
     // Get folder info
     const [folders] = await connection.query(
-      'SELECT slug FROM storage_folders WHERE id = ?',
+      'SELECT id FROM storage_folders WHERE id = ?',
       [folderId]
     );
     
@@ -357,23 +416,24 @@ exports.deleteFolder = async (req, res) => {
       });
     }
     
-    const folder = folders[0];
+    // Get full folder path
+    const folderFullPath = await getFolderPath(folderId);
     
-    // Delete physical folder using slug
-    const folderPath = path.join(STORAGE_BASE, folder.slug);
+    // Delete physical folder using full path
+    const folderPath = path.join(STORAGE_BASE, folderFullPath);
     if (fs.existsSync(folderPath)) {
       fs.rmSync(folderPath, { recursive: true, force: true });
     }
     
-    // Delete files from database
+    // Delete files from database (CASCADE will handle subfolders)
     await connection.query('DELETE FROM storage_files WHERE folder_id = ?', [folderId]);
     
-    // Delete folder from database
+    // Delete folder from database (CASCADE will delete subfolders)
     await connection.query('DELETE FROM storage_folders WHERE id = ?', [folderId]);
     
     res.json({
       success: true,
-      message: 'Folder and all files deleted successfully'
+      message: 'Folder and all contents deleted successfully'
     });
   } catch (err) {
     console.error('Error deleting folder:', err);

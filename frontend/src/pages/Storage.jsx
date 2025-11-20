@@ -27,7 +27,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Divider
+  Divider,
+  LinearProgress
 } from '@mui/material';
 import {
   Folder as FolderIcon,
@@ -192,16 +193,24 @@ const Storage = () => {
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  
+  // Debug: Log when dialog state changes
+  useEffect(() => {
+    console.log('createFolderOpen changed to:', createFolderOpen);
+  }, [createFolderOpen]);
   const [currentFolder, setCurrentFolder] = useState(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderDesc, setNewFolderDesc] = useState('');
   const [selectedFileIds, setSelectedFileIds] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [selectedFileLink, setSelectedFileLink] = useState('');
   const [expandedFolders, setExpandedFolders] = useState({});
+  const [breadcrumbs, setBreadcrumbs] = useState([]);
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
 
@@ -209,13 +218,33 @@ const Storage = () => {
     fetchStorage();
   }, []);
 
-  const fetchStorage = async () => {
+  const fetchStorage = async (keepCurrentFolder = false) => {
     try {
       setLoading(true);
       const response = await axios.get('https://www.shorthandexam.in/api/storage/structure', {
         withCredentials: true
       });
-      setFolders(response.data.data);
+      const newFolders = response.data.data;
+      setFolders(newFolders);
+      
+      // If we need to keep the current folder open, find and update it
+      if (keepCurrentFolder && currentFolder) {
+        const findFolder = (folders, id) => {
+          for (const folder of folders) {
+            if (folder.id === id) return folder;
+            if (folder.subfolders && folder.subfolders.length > 0) {
+              const found = findFolder(folder.subfolders, id);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+        
+        const updatedFolder = findFolder(newFolders, currentFolder.id);
+        if (updatedFolder) {
+          setCurrentFolder(updatedFolder);
+        }
+      }
     } catch (err) {
       showSnackbar('Failed to load storage', 'error');
     } finally {
@@ -230,18 +259,27 @@ const Storage = () => {
     }
 
     try {
-      await axios.post('https://www.shorthandexam.in/api/storage/folder', {
+      const response = await axios.post('https://www.shorthandexam.in/api/storage/folder', {
         folderName: newFolderName,
-        description: newFolderDesc
+        description: newFolderDesc,
+        parentId: currentFolder?.id || null
       }, { withCredentials: true });
 
-      showSnackbar('Folder created successfully', 'success');
+      console.log('Folder created:', response.data);
+      
+      // Close dialog and reset form immediately
       setCreateFolderOpen(false);
       setNewFolderName('');
       setNewFolderDesc('');
-      fetchStorage();
+      
+      showSnackbar('Folder created successfully', 'success');
+      
+      // Refresh storage and keep current folder open
+      await fetchStorage(!!currentFolder);
     } catch (err) {
-      showSnackbar('Failed to create folder', 'error');
+      console.error('Error creating folder:', err);
+      showSnackbar(err.response?.data?.message || 'Failed to create folder', 'error');
+      // Don't close dialog on error so user can retry
     }
   };
 
@@ -292,20 +330,34 @@ const Storage = () => {
 
     try {
       setUploading(true);
+      setUploadProgress(0);
+      setUploadStatus(`Preparing to upload ${files.length} file(s)...`);
+      
       await axios.post('https://www.shorthandexam.in/api/storage/upload', formData, {
         withCredentials: true,
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percentCompleted);
+          setUploadStatus(`Uploading ${files.length} file(s)... ${percentCompleted}%`);
+        }
       });
 
+      setUploadStatus('Processing files on server...');
       showSnackbar(`${files.length} file(s) uploaded successfully`, 'success');
-      fetchStorage();
+      await fetchStorage(true);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+      if (folderInputRef.current) {
+        folderInputRef.current.value = '';
+      }
     } catch (err) {
-      showSnackbar('Failed to upload files', 'error');
+      showSnackbar(err.response?.data?.message || 'Failed to upload files', 'error');
     } finally {
       setUploading(false);
+      setUploadProgress(0);
+      setUploadStatus('');
     }
   };
 
@@ -357,7 +409,7 @@ const Storage = () => {
       }
       showSnackbar(`${selectedFileIds.length} file(s) deleted successfully`, 'success');
       setSelectedFileIds([]);
-      fetchStorage();
+      await fetchStorage(true);
     } catch (err) {
       showSnackbar('Failed to delete files', 'error');
     }
@@ -416,17 +468,18 @@ const Storage = () => {
     );
   };
 
+  // Determine which view to show
+  let mainContent;
+  
   if (loading) {
-    return (
+    mainContent = (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
         <CircularProgress />
       </Box>
     );
-  }
-
-  // Folder List View
-  if (!currentFolder) {
-    return (
+  } else if (!currentFolder) {
+    // Folder List View
+    mainContent = (
       <Box sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4" fontWeight="bold">
@@ -481,7 +534,10 @@ const Storage = () => {
                       boxShadow: 4
                     }
                   }}
-                  onClick={() => setCurrentFolder(folder)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentFolder(folder);
+                  }}
                 >
                   <Box sx={{ p: 3, textAlign: 'center' }}>
                     <FolderIcon sx={{ fontSize: 60, color: 'primary.main', mb: 1 }} />
@@ -503,50 +559,13 @@ const Storage = () => {
           </Grid>
         )}
 
-        {/* Create Folder Dialog */}
-        <Dialog open={createFolderOpen} onClose={() => setCreateFolderOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Create New Folder</DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Folder Name"
-              fullWidth
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              sx={{ mb: 2, mt: 1 }}
-            />
-            <TextField
-              margin="dense"
-              label="Description (Optional)"
-              fullWidth
-              multiline
-              rows={3}
-              value={newFolderDesc}
-              onChange={(e) => setNewFolderDesc(e.target.value)}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setCreateFolderOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateFolder} variant="contained">Create</Button>
-          </DialogActions>
-        </Dialog>
 
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={4000}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-        >
-          <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
       </Box>
     );
-  }
-
-  // Folder Content View
-  const files = currentFolder.files || [];
+  } else {
+    // Folder Content View
+    const files = currentFolder.files || [];
+  const subfolders = currentFolder.subfolders || [];
   
   // Build folder tree structure from files
   const buildFolderTree = (files) => {
@@ -607,6 +626,26 @@ const Storage = () => {
         </Typography>
       </Breadcrumbs>
 
+      {/* Upload Progress Banner */}
+      {uploading && (
+        <Paper sx={{ p: 2, mb: 2, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.main' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+            <CircularProgress size={24} />
+            <Typography variant="body1" fontWeight="medium">
+              {uploadStatus}
+            </Typography>
+          </Box>
+          <LinearProgress 
+            variant="determinate" 
+            value={uploadProgress} 
+            sx={{ height: 10, borderRadius: 5 }}
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+            {uploadProgress}% complete - Please don't close this page
+          </Typography>
+        </Paper>
+      )}
+
       {/* Action Bar */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -614,8 +653,17 @@ const Storage = () => {
             variant="outlined"
             startIcon={<BackIcon />}
             onClick={() => setCurrentFolder(null)}
+            disabled={uploading}
           >
             Back
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateFolderOpen(true)}
+            disabled={uploading}
+          >
+            Create Subfolder
           </Button>
           {files.length > 0 && (
             <>
@@ -667,6 +715,54 @@ const Storage = () => {
         </Button>
       </Box>
 
+      {/* Subfolders */}
+      {subfolders.length > 0 && (
+        <>
+          <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+            📁 Subfolders
+          </Typography>
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            {subfolders.map((subfolder) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={subfolder.id}>
+                <Card
+                  sx={{
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: 3
+                    }
+                  }}
+                  onClick={() => setCurrentFolder(subfolder)}
+                >
+                  <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <FolderIcon sx={{ fontSize: 40, color: 'warning.main' }} />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="subtitle1" noWrap fontWeight="medium">
+                        {subfolder.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {subfolder.files?.length || 0} files • {subfolder.subfolders?.length || 0} folders
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteFolder(subfolder.id);
+                      }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </>
+      )}
+
       {/* Upload Options */}
       <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
         📤 Upload Options
@@ -698,9 +794,19 @@ const Storage = () => {
               style={{ display: 'none' }}
             />
             {uploading ? (
-              <Box>
+              <Box sx={{ width: '100%' }}>
                 <CircularProgress sx={{ mb: 2 }} />
-                <Typography>Uploading...</Typography>
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  {uploadStatus}
+                </Typography>
+                <LinearProgress 
+                  variant="determinate" 
+                  value={uploadProgress} 
+                  sx={{ height: 8, borderRadius: 4 }}
+                />
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  {uploadProgress}% complete
+                </Typography>
               </Box>
             ) : (
               <Box>
@@ -842,6 +948,101 @@ const Storage = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Create Folder Dialog - Available in both root and folder views */}
+      <Dialog 
+        open={createFolderOpen} 
+        onClose={() => {
+          setCreateFolderOpen(false);
+          setNewFolderName('');
+          setNewFolderDesc('');
+        }} 
+        maxWidth="sm" 
+        fullWidth
+      >
+        <DialogTitle>{currentFolder ? 'Create Subfolder' : 'Create New Folder'}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Folder Name"
+            fullWidth
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            sx={{ mb: 2, mt: 1 }}
+          />
+          <TextField
+            margin="dense"
+            label="Description (Optional)"
+            fullWidth
+            multiline
+            rows={3}
+            value={newFolderDesc}
+            onChange={(e) => setNewFolderDesc(e.target.value)}
+          />
+          {currentFolder && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              This folder will be created inside: <strong>{currentFolder.name}</strong>
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateFolderOpen(false)}>Cancel</Button>
+          <Button onClick={handleCreateFolder} variant="contained">Create</Button>
+        </DialogActions>
+      </Dialog>
+
+    </Box>
+    );
+  }
+
+  // Main render with dialogs available for all views
+  return (
+    <>
+      {mainContent}
+      
+      {/* Create Folder Dialog - Available in all views */}
+      <Dialog 
+        open={createFolderOpen} 
+        onClose={() => {
+          setCreateFolderOpen(false);
+          setNewFolderName('');
+          setNewFolderDesc('');
+        }} 
+        maxWidth="sm" 
+        fullWidth
+      >
+        <DialogTitle>{currentFolder ? 'Create Subfolder' : 'Create New Folder'}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Folder Name"
+            fullWidth
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            sx={{ mb: 2, mt: 1 }}
+          />
+          <TextField
+            margin="dense"
+            label="Description (Optional)"
+            fullWidth
+            multiline
+            rows={3}
+            value={newFolderDesc}
+            onChange={(e) => setNewFolderDesc(e.target.value)}
+          />
+          {currentFolder && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              This folder will be created inside: <strong>{currentFolder.name}</strong>
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateFolderOpen(false)}>Cancel</Button>
+          <Button onClick={handleCreateFolder} variant="contained">Create</Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
@@ -851,7 +1052,7 @@ const Storage = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </>
   );
 };
 
