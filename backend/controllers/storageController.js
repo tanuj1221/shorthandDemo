@@ -280,7 +280,9 @@ exports.uploadFiles = async (req, res) => {
       const filePath = relativePath ? `${relativePath}/${finalFileName}` : finalFileName;
       
       // Generate file URL using full folder path
-      const fileUrl = `${req.protocol}://${req.get('host')}/storage/${folderFullPath}/${filePath}`;
+      // Use environment variable for base URL or construct from request
+      const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+      const fileUrl = `${baseUrl}/storage/${folderFullPath}/${filePath}`;
       
       // Save new file info to database
       const [result] = await connection.query(
