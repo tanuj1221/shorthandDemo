@@ -16,6 +16,7 @@ import { validateAndSyncAuth, validateAndSyncAdminAuth } from './utils/authCheck
 import Summary from './pages/Summary';
 import Tables from './pages/Tables';
 import Upload from './pages/Upload';
+import Storage from './pages/Storage';
 import Update from './pages/Update';
 import Approve from './pages/Approve';
 import PaidStudents from './pages/PaidStudent';
@@ -145,6 +146,7 @@ const App = () => {
             <Route path=":tableName" element={<Tables />} />
           </Route>
           <Route path="upload" element={<Upload />} />
+          <Route path="storage" element={<Storage />} />
           <Route path="update" element={<Update />} />
           <Route path="approve" element={<Approve />} />
           <Route path="paid-students" element={<PaidStudents />} />

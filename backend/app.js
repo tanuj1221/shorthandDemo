@@ -11,6 +11,7 @@ const adminView = require('./routes/adminViewRoutes');
 const mockroute = require('./routes/mockRoutes');
 const noticeRoutes = require('./routes/noticeRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const storageRoutes = require('./routes/storageRoutes');
 const crypto = require('crypto');
 const connection = require('./config/db1');
 const auth1 = require('./routes/isauthsti');
@@ -35,6 +36,7 @@ app.use(express.urlencoded({ limit: '25mb', extended: true }));
 
 // Static Files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/storage', express.static(path.join(__dirname, 'storage')));
 // Session Configuration
 app.use(session({
   secret: 'divis@GeYT',
@@ -264,6 +266,7 @@ app.use(mockroute);
 app.use(auth1);
 app.use(noticeRoutes);
 app.use(contactRoutes);
+app.use('/api/storage', storageRoutes);
 
 // Serve Static Frontend (Production)
 app.use(express.static(path.join(__dirname, 'dist')));

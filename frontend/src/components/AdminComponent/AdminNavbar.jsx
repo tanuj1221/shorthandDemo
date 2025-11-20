@@ -68,6 +68,7 @@ export default function AdminNavbar() {
     { name: 'Summary', path: '/summary', icon: '📊' },
     { name: 'Tables', path: '/tables', icon: '📋' },
     { name: 'Upload', path: '/upload', icon: '📤' },
+    { name: 'Storage', path: '/storage', icon: '💾' },
     { name: 'Audio', path: '/audio', icon: '🎧' },
   ];
 
