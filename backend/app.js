@@ -22,6 +22,13 @@ const { scheduleTimerReset } = require('./services/resetTimerService');
 const app = express();
 const PORT = 3001;
 
+// Configure MIME types for ClickOnce deployment files
+express.static.mime.define({
+  'application/x-ms-application': ['application'],
+  'application/x-ms-manifest': ['manifest'],
+  'application/octet-stream': ['deploy']
+});
+
 // CORS Configuration - SINGLE configuration only
 app.use(cors({
   origin: ['http://localhost:5173', 'http://45.119.47.81:8080', 'http://localhost:3000'],
