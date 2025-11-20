@@ -18,7 +18,7 @@ export default function Update() {
     setSelectedStudent(null);
 
     try {
-      const response = await fetch(`https://www.shorthandexam.in/update?id=${studentId}`, {
+      const response = await fetch(`http://localhost:3001/update?id=${studentId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -95,7 +95,7 @@ export default function Update() {
         image_url: formValues.image || formValues.image_url
       };
 
-      const response = await fetch(`https://www.shorthandexam.in/update?id=${studentId}`, {
+      const response = await fetch(`http://localhost:3001/update?id=${studentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

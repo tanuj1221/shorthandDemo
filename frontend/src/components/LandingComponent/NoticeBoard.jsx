@@ -13,7 +13,7 @@ const NoticeBoard = () => {
 
   const fetchNotices = async () => {
     try {
-      const response = await axios.get('https://www.shorthandexam.in/api/notices');
+      const response = await axios.get('http://localhost:3001/api/notices');
       if (response.data.success) {
         setNotices(response.data.notices);
       }

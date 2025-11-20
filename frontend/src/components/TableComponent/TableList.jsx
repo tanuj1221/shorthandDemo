@@ -32,7 +32,7 @@ function TableList({ onSelect }) {
   useEffect(() => {
     const fetchTables = async () => {
       try {
-        const response = await axios.get('https://www.shorthandexam.in/tables');
+        const response = await axios.get('http://localhost:3001/tables');
         setTables(response.data.tables);
         setLoading(false);
       } catch (err) {

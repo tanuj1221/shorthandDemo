@@ -30,8 +30,8 @@ function LoginComponent({ setIsAuthenticated, setIsAdminAuthenticated, loginType
 
     try {
       const apiUrl = loginType === 'admin'
-        ? 'https://www.shorthandexam.in/admin_login'
-        : 'https://www.shorthandexam.in/login_institute';
+        ? 'http://localhost:3001/admin_login'
+        : 'http://localhost:3001/login_institute';
 
       const response = await fetch(apiUrl, {
         method: 'POST',

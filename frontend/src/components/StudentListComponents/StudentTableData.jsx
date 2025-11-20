@@ -27,7 +27,7 @@ const StudentTableData = () => {
     const fetchStudents = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('https://www.shorthandexam.in/paystudents', {
+        const response = await axios.get('http://localhost:3001/paystudents', {
           withCredentials: true,
         });
         console.log('Fetched students data:', response.data);
@@ -289,7 +289,7 @@ const StudentTableData = () => {
     setLoading(true);
     const fetchStudents = async () => {
       try {
-        const response = await axios.get('https://www.shorthandexam.in/paystudents', {
+        const response = await axios.get('http://localhost:3001/paystudents', {
           withCredentials: true,
         });
         console.log('Refreshed students data:', response.data);

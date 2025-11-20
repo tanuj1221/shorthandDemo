@@ -87,7 +87,7 @@
 //       console.log('Submitting payment data:', paymentData);
 
 //       const response = await axios.post(
-//         'https://www.shorthandexam.in/verifyPayment1',
+//         'http://localhost:3001/verifyPayment1',
 //         paymentData,
 //         { 
 //           withCredentials: true,
@@ -391,7 +391,7 @@ export const QRPaymentModal = ({
       console.log('Submitting payment data:', paymentData);
 
       const response = await axios.post(
-        'https://www.shorthandexam.in/verifyPayment1',
+        'http://localhost:3001/verifyPayment1',
         paymentData,
         { 
           withCredentials: true,

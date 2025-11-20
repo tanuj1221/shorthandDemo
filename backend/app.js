@@ -270,7 +270,7 @@ app.use('/api/storage', storageRoutes);
 
 // Serve Static Frontend (Production)
 app.use(express.static(path.join(__dirname, 'dist')));
-app.get(/^\/(?!api).*/, (_req, res) => {
+app.get(/^\/(?!api|storage|uploads).*/, (_req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 

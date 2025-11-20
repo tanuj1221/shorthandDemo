@@ -24,10 +24,10 @@ const Dashboard = () => {
       try {
         // Fetch both payment data and points data in parallel
         const [paymentResponse, pointsResponse] = await Promise.all([
-          fetch('https://www.shorthandexam.in/student-payments-status', {
+          fetch('http://localhost:3001/student-payments-status', {
             credentials: 'include'
           }),
-          fetch('https://www.shorthandexam.in/institute-points', {
+          fetch('http://localhost:3001/institute-points', {
             credentials: 'include'
           })
         ]);

@@ -35,7 +35,7 @@
 //     setApiError(null);
     
 //     try {
-//       const response = await fetch('https://www.shorthandexam.in/paystudents', {
+//       const response = await fetch('http://localhost:3001/paystudents', {
 //         method: 'GET',
 //         credentials: 'include',
 //         headers: {
@@ -369,7 +369,7 @@ const StudentList = () => {
     setLoading(true);
     setApiError(null);
     try {
-      const response = await fetch('https://www.shorthandexam.in/paystudents', {
+      const response = await fetch('http://localhost:3001/paystudents', {
         method: 'GET',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -453,7 +453,7 @@ const StudentList = () => {
   const downloadExcel = async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://www.shorthandexam.in/download-students-excel', {
+      const response = await fetch('http://localhost:3001/download-students-excel', {
         method: 'GET',
         credentials: 'include',
       });
