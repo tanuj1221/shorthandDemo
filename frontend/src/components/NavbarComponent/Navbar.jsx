@@ -161,7 +161,8 @@ const Navbar = () => {
               Pay Fees
             </Link>
             <a 
-              href="http://103.17.193.168:8000/publish/publish.htm"
+              href="https://www.shorthandexam.in/storage/exe/Shorthand%20Demo%20Nov%2025.exe
+"
               target="_blank"
               rel="noopener noreferrer"
               className="px-2 xl:px-3 py-2 text-sm text-gray-700 hover:text-indigo-600 font-medium transition-colors whitespace-nowrap"
@@ -224,7 +225,8 @@ const Navbar = () => {
                     Pay Fees
                   </Link>
                   <a 
-                    href="http://103.17.193.168:8000/publish/publish.htm"
+                    href="https://www.shorthandexam.in/storage/exe/Shorthand%20Demo%20Nov%2025.exe
+"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
@@ -308,7 +310,8 @@ const Navbar = () => {
                     💳 Pay Fees
                   </Link>
                   <a 
-                    href="http://103.17.193.168:8000/publish/publish.htm"
+                    href="https://www.shorthandexam.in/storage/exe/Shorthand%20Demo%20Nov%2025.exe
+"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block px-4 py-3 text-sm hover:bg-gray-100 transition-colors"
