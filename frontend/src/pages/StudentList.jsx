@@ -358,7 +358,7 @@ const StudentList = () => {
   const [loading, setLoading] = React.useState(false);
   const [filterAnchorEl, setFilterAnchorEl] = React.useState(null);
   const [statusFilter, setStatusFilter] = React.useState('all');
-  const [batchYearFilter, setBatchYearFilter] = React.useState('2026');
+  const [batchYearFilter, setBatchYearFilter] = React.useState('all');
   const [actionAnchorEl, setActionAnchorEl] = React.useState(null);
   const [selectedStudent, setSelectedStudent] = React.useState(null);
   const [students, setStudents] = React.useState([]);

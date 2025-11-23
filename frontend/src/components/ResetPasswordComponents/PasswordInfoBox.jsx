@@ -14,7 +14,7 @@ const PasswordInfoBox = () => (
     }}
   >
     <Typography variant="body1" gutterBottom>
-      Password must be exactly 4 digits (numbers only)
+      Password must be 4-8 alphanumeric characters (letters and numbers)
     </Typography>
     <Typography variant="body1">
       Make sure your new password is strong and unique

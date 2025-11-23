@@ -327,7 +327,7 @@ const StudentTableStructure = ({
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Password</TableCell>
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Status</TableCell>
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Start Date</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Expiry Date</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>End Date</TableCell>
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Batch Year</TableCell>
               <TableCell sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>Subject</TableCell>
             </TableRow>

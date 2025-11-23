@@ -13,7 +13,7 @@ const PersonalInfoStep = ({ formData, handleChange, nextStep }) => {
         <InputField label="Middle Name" name="middleName" value={formData.middleName} onChange={handleChange} error={formData.errors?.middleName} />
         <InputField label="Mother's Name" name="motherName" value={formData.motherName} onChange={handleChange} required error={formData.errors?.motherName} />
         <SelectField label="Batch Year" name="batch_year" value={formData.batch_year} onChange={handleChange} options={['2025', '2026']} required />
-        <SelectField label="Semester" name="sem" value={formData.sem} onChange={handleChange} options={['1', '2']} required />
+        <SelectField label="Semester" name="sem" value={formData.sem} onChange={handleChange} options={['June', 'December']} required />
         <InputField 
           label="Mobile No" 
           name="mobile_no" 

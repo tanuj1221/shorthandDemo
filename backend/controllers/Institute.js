@@ -851,11 +851,11 @@ exports.resetInstitutePassword = async (req, res) => {
       });
     }
 
-    // 4. Validate password length
-    if (newPassword.length !== 4 || !/^\d+$/.test(newPassword)) {
+    // 4. Validate password length and format
+    if (newPassword.length < 4 || newPassword.length > 8 || !/^[a-zA-Z0-9]+$/.test(newPassword)) {
       return res.status(400).json({
         success: false,
-        message: "Password must be exactly 4 digits (numbers only)",
+        message: "Password must be 4-8 alphanumeric characters",
       });
     }
 

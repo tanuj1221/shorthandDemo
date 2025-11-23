@@ -9,12 +9,6 @@ const SubjectsStep = ({ selectedSubjects, handleSubjectChange, prevStep, nextSte
       <div className="text-xl font-semibold text-gray-800 mb-4">Subjects:</div>
       <div className="space-y-6">
         <SubjectGroup
-          title="Others"
-          subjects={['Shorthand Dummy Subject']}
-          selected={selectedSubjects}
-          onChange={handleSubjectChange}
-        />
-        <SubjectGroup
           title="English"
           subjects={[
             'English Shorthand 60 wpm',

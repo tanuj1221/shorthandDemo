@@ -1092,9 +1092,9 @@ const FeesPayment = () => {
     fetchStudents();
   }, []);
 
-  // Filter to show students with 'pending' and 'waiting' status (not 'paid')
+  // Filter to show ONLY students with 'pending' status (exclude 'paid' and 'waiting')
   const unpaidStudents = students.filter((student) => 
-    student.amount !== 'paid' && student.amount !== 'Paid'
+    student.amount === 'pending' || student.amount === 'Pending'
   );
 
   const filteredStudents = unpaidStudents.filter((student) =>

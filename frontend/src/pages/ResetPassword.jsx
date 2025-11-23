@@ -70,10 +70,11 @@ const ResetPassword = () => {
     }
 
     if (
-      formData.newPassword.length !== 4 ||
-      !/^\d+$/.test(formData.newPassword)
+      formData.newPassword.length < 4 ||
+      formData.newPassword.length > 8 ||
+      !/^[a-zA-Z0-9]+$/.test(formData.newPassword)
     ) {
-      showSnackbar(setSnackbar)("Password must be exactly 4 digits", "error");
+      showSnackbar(setSnackbar)("Password must be 4-8 alphanumeric characters", "error");
       return;
     }
     setIsLoading(true);

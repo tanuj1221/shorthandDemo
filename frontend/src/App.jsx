@@ -26,7 +26,8 @@ import ContactManagement from './pages/ContactManagement';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsConditions from './pages/TermsConditions';
 import RefundPolicy from './pages/RefundPolicy';
-import ShippingDelivery from './pages/ShippingDelivery'; 
+import ShippingDelivery from './pages/ShippingDelivery';
+import DownloadClient from './pages/DownloadClient'; 
 
 const AdminLayout = ({ handleLogout }) => (
   <>
@@ -131,6 +132,7 @@ const App = () => {
           <Route path="payfees" element={<PayFees />} />
           <Route path="passages" element={<Passages />} />
           <Route path="reset-password" element={<ResetPassword />} />
+          <Route path="download" element={<DownloadClient />} />
         </Route>
 
         {/* Protected Admin Routes */}
