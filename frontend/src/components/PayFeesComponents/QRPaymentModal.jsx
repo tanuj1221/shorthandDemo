@@ -599,7 +599,7 @@ export const QRPaymentModal = ({
                 <CircularProgress size={20} sx={{ mr: 1 }} />
                 Verifying...
               </>
-            ) : 'Verify Payment'}
+            ) : 'Submit Payment'}
           </Button>
         </DialogActions>
       </Dialog>
