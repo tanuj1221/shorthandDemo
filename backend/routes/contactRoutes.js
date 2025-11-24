@@ -28,6 +28,7 @@ router.post('/api/contact', async (req, res) => {
       VALUES (?, ?, ?, ?, ?, 'new')
     `;
     
+    // Direct pool query - auto-releases connection
     const [result] = await connection.query(query, [name, email, phone || null, subject || 'General Inquiry', message]);
     
     res.json({ 

@@ -1369,29 +1369,30 @@ exports.processHybridPayment = async (req, res) => {
     subscriptionMode
   });
 
+  const conn = await connection.getConnection();
   try {
     // Start transaction
-    await connection.query('START TRANSACTION');
+    await conn.beginTransaction();
 
     // Check if institute has enough points (only if points are being used)
     if (totalPointsUsed > 0) {
       const query = "SELECT points FROM institutedb WHERE instituteId = ?";
-      const [results] = await connection.query(query, [instituteId]);
+      const [results] = await conn.query(query, [instituteId]);
 
       if (results.length === 0) {
-        await connection.query('ROLLBACK');
+        await conn.rollback();
         return res.status(404).send("Institute not found");
       }
 
       const availablePoints = results[0].points || 0;
       if (availablePoints < totalPointsUsed) {
-        await connection.query('ROLLBACK');
+        await conn.rollback();
         return res.status(400).send(`Insufficient points. Available: ${availablePoints}, Required: ${totalPointsUsed}`);
       }
 
       // Deduct points from institute
       const updateInstituteQuery = "UPDATE institutedb SET points = points - ? WHERE instituteId = ?";
-      await connection.query(updateInstituteQuery, [totalPointsUsed, instituteId]);
+      await conn.query(updateInstituteQuery, [totalPointsUsed, instituteId]);
       console.log(`Deducted ${totalPointsUsed} points from institute ${instituteId}`);
     }
 
@@ -1423,10 +1424,10 @@ exports.processHybridPayment = async (req, res) => {
 
       // Get student details from student14 table
       const getStudentQuery = "SELECT firstName, lastName, mobile_no, email FROM student14 WHERE student_id = ?";
-      const [studentResults] = await connection.query(getStudentQuery, [payment.studentId]);
+      const [studentResults] = await conn.query(getStudentQuery, [payment.studentId]);
 
       if (studentResults.length === 0) {
-        await connection.query('ROLLBACK');
+        await conn.rollback();
         return res.status(404).send(`Student not found: ${payment.studentId}`);
       }
 
@@ -1440,10 +1441,7 @@ exports.processHybridPayment = async (req, res) => {
                                  batchEndDate = ?
                                  WHERE student_id = ?`;
       
-      await connection.query(updateStudentQuery, [batchStartDate, batchEndDate, payment.studentId]);
-
-      // Remove the points addition to student since student14 table doesn't have points column
-      // Previously was: UPDATE student14 SET points = points + ? WHERE student_id = ?
+      await conn.query(updateStudentQuery, [batchStartDate, batchEndDate, payment.studentId]);
 
       // Insert QR payment record if cash amount exists
       if (totalCashAmount > 0 && utrNumber) {
@@ -1451,7 +1449,7 @@ exports.processHybridPayment = async (req, res) => {
                               (student_id, user, mobile, email, utr, date, amount) 
                               VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-        await connection.query(insertQrQuery, [
+        await conn.query(insertQrQuery, [
           payment.studentId,
           studentName,
           student.mobile_no || '',
@@ -1466,7 +1464,7 @@ exports.processHybridPayment = async (req, res) => {
     }
 
     // Commit transaction
-    await connection.query('COMMIT');
+    await conn.commit();
     console.log("Hybrid payment completed successfully");
 
     const responseData = {
@@ -1484,8 +1482,11 @@ exports.processHybridPayment = async (req, res) => {
     res.send(responseData);
 
   } catch (err) {
-    await connection.query('ROLLBACK');
+    await conn.rollback();
     console.error("Hybrid payment error:", err);
     res.status(500).send(err.message);
+  } finally {
+    conn.release();
+    console.log("Connection released");
   }
 };

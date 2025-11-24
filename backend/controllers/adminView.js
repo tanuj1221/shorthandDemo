@@ -932,34 +932,35 @@ exports.getAudioSubmissions = async (req, res) => {
 exports.approveAudioSubmission = async (req, res) => {
   const { id, remark } = req.body;
 
+  const conn = await pool.getConnection();
   try {
-    console.log(`Starting approval for submission ${id}`); // Log entry point
+    console.log(`Starting approval for submission ${id}`);
 
-    await connection.query('START TRANSACTION');
-    console.log('Transaction started'); // Confirm transaction
+    await conn.beginTransaction();
+    console.log('Transaction started');
 
     // 1. Update submission
     const updateQuery = `UPDATE audio_checking SET status='approved', remark=?, approved_by=1 WHERE id=?`;
-    console.log('Executing:', updateQuery, [remark, id]); // Log query
+    console.log('Executing:', updateQuery, [remark, id]);
 
-    const [updateResult] = await connection.query(updateQuery, [remark, id]);
-    console.log('Update result:', updateResult); // Log result
+    const [updateResult] = await conn.query(updateQuery, [remark, id]);
+    console.log('Update result:', updateResult);
 
     if (updateResult.affectedRows === 0) {
-      await connection.query('ROLLBACK');
+      await conn.rollback();
       console.log('No rows affected - submission not found');
       return res.status(404).json({ success: false, message: 'Submission not found' });
     }
 
     // 2. Get instituteId
-    const [submission] = await connection.query(
+    const [submission] = await conn.query(
       'SELECT instituteId FROM audio_checking WHERE id=?',
       [id]
     );
-    console.log('Institute ID:', submission[0]?.instituteId); // Log institute
+    console.log('Institute ID:', submission[0]?.instituteId);
 
     if (!submission.length) {
-      await connection.query('ROLLBACK');
+      await conn.rollback();
       console.log('Institute not found');
       return res.status(404).json({ success: false, message: 'Institute not found' });
     }
@@ -968,10 +969,10 @@ exports.approveAudioSubmission = async (req, res) => {
     const pointsQuery = 'UPDATE institutedb SET points=points+200 WHERE instituteId=?';
     console.log('Executing:', pointsQuery, [submission[0].instituteId]);
 
-    await connection.query(pointsQuery, [submission[0].instituteId]);
-    await connection.query('COMMIT');
+    await conn.query(pointsQuery, [submission[0].instituteId]);
+    await conn.commit();
 
-    console.log('Approval successful'); // Final confirmation
+    console.log('Approval successful');
     res.json({
       success: true,
       message: 'Approved (approved_by=1)',
@@ -979,17 +980,20 @@ exports.approveAudioSubmission = async (req, res) => {
     });
 
   } catch (err) {
-    await connection.query('ROLLBACK');
+    await conn.rollback();
     console.error('🚨 FULL ERROR:', {
       message: err.message,
       sql: err.sql,
-      stack: err.stack  // Critical for debugging
+      stack: err.stack
     });
     res.status(500).json({
       success: false,
       message: 'Server error during approval',
-      error: err.message  // Send error details to client (remove in production)
+      error: err.message
     });
+  } finally {
+    conn.release();
+    console.log('Connection released');
   }
 };
 

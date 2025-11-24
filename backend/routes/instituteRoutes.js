@@ -32,6 +32,7 @@ router.delete('/deletetable/:tableName', async (req, res) => {
     }
 
     try {
+        // Direct pool query - auto-releases connection
         await connection.query(`DROP TABLE ??`, [tableName]);
         res.send(`Table ${tableName} successfully deleted.`);
     } catch (error) {
