@@ -245,17 +245,23 @@ exports.registerStudent = async (req, res) => {
       console.log("Mapped course IDs:", courseIds);
     }
 
+    // Validate we have subjects
+    if (courseIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid subjects selected"
+      });
+    }
+
     // Generate 4-digit numeric password (same for all subject entries)
     const generatedPassword = Math.floor(1000 + Math.random() * 9000).toString();
     console.log("Generated password:", generatedPassword);
 
-    // Batch insert - much faster than loop
-    const insertQuery =
-      "INSERT INTO student14 (student_id, password, instituteId, firstName, lastName, motherName, middleName, subjectsId, batchNo, courseId, batch_year, sem, batchStartDate, batchEndDate, amount, loggedIn, rem_time, done, image, mobile_no, email) VALUES ?";
-
-    // Create one entry per subject - prepare all values at once
     const insertedStudentIds = [];
-    const allValues = [];
+    
+    // Insert students one by one (safer than batch for now)
+    const insertQuery =
+      "INSERT INTO student14 (student_id, password, instituteId, firstName, lastName, motherName, middleName, subjectsId, batchNo, courseId, batch_year, sem, batchStartDate, batchEndDate, amount, loggedIn, rem_time, done, image, mobile_no, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     for (let i = 0; i < courseIds.length; i++) {
       const currentStudentId = nextStudentId + i;
@@ -285,13 +291,10 @@ exports.registerStudent = async (req, res) => {
         email,
       ];
 
-      allValues.push(values);
+      console.log(`Inserting student entry ${i + 1}/${courseIds.length} with ID:`, currentStudentId);
+      await connection.query(insertQuery, values);
       insertedStudentIds.push(currentStudentId);
     }
-
-    // Single batch insert instead of loop
-    console.log(`Batch inserting ${courseIds.length} student entries`);
-    await connection.query(insertQuery, [allValues]);
 
     console.log("Student registered successfully with IDs:", insertedStudentIds);
 
