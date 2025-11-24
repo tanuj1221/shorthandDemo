@@ -33,8 +33,7 @@ const PhotoUploadStep = ({ handleFileChange, prevStep, handleSubmit }) => {
           let height = img.height;
           
           // Calculate new dimensions while maintaining aspect ratio
-          // Use smaller max dimension for better compression
-          const maxDimension = 400; // Reduced from 800 to 400
+          const maxDimension = 300; // Smaller dimension for better compression
           if (width > height && width > maxDimension) {
             height = (height * maxDimension) / width;
             width = maxDimension;
@@ -48,35 +47,26 @@ const PhotoUploadStep = ({ handleFileChange, prevStep, handleSubmit }) => {
           
           const ctx = canvas.getContext('2d');
           ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
+          ctx.imageSmoothingQuality = 'medium'; // Changed from 'high' to 'medium'
           ctx.drawImage(img, 0, 0, width, height);
           
-          // Try different quality levels to get under maxSizeKB
-          let quality = 0.7; // Start with lower quality
-          const tryCompress = () => {
-            canvas.toBlob((blob) => {
-              if (!blob) {
-                reject(new Error('Compression failed'));
-                return;
-              }
-              
-              const sizeKB = blob.size / 1024;
-              
-              if (sizeKB <= maxSizeKB || quality <= 0.1) {
-                // Success or reached minimum quality
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-              } else {
-                // Try again with lower quality
-                quality -= 0.1;
-                tryCompress();
-              }
-            }, 'image/jpeg', quality);
-          };
-          
-          tryCompress();
+          // Use fixed quality instead of recursive loop
+          const quality = 0.6; // Fixed quality
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('Compression failed'));
+              return;
+            }
+            
+            const sizeKB = blob.size / 1024;
+            console.log(`Compressed image size: ${sizeKB.toFixed(2)}KB`);
+            
+            // Convert to base64
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          }, 'image/jpeg', quality);
         };
         img.onerror = reject;
         img.src = e.target.result;
@@ -142,11 +132,23 @@ const PhotoUploadStep = ({ handleFileChange, prevStep, handleSubmit }) => {
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
     
-    canvas.width = crop.width;
-    canvas.height = crop.height;
+    // Limit canvas size to reduce CPU usage
+    const maxCropSize = 300;
+    let cropWidth = crop.width;
+    let cropHeight = crop.height;
+    
+    if (cropWidth > maxCropSize || cropHeight > maxCropSize) {
+      const scale = maxCropSize / Math.max(cropWidth, cropHeight);
+      cropWidth = Math.floor(cropWidth * scale);
+      cropHeight = Math.floor(cropHeight * scale);
+    }
+    
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
     
     const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingQuality = 'high';
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'medium'; // Changed from 'high' to 'medium'
 
     ctx.drawImage(
       image,
@@ -156,12 +158,12 @@ const PhotoUploadStep = ({ handleFileChange, prevStep, handleSubmit }) => {
       crop.height * scaleY,
       0,
       0,
-      crop.width,
-      crop.height
+      cropWidth,
+      cropHeight
     );
 
-    // Convert canvas to base64 (NOT blob URL!)
-    const base64Image = canvas.toDataURL('image/jpeg', 0.9);
+    // Convert canvas to base64 with lower quality
+    const base64Image = canvas.toDataURL('image/jpeg', 0.7); // Reduced from 0.9 to 0.7
     
     // Update preview with base64
     setImagePreview(base64Image);
@@ -170,7 +172,7 @@ const PhotoUploadStep = ({ handleFileChange, prevStep, handleSubmit }) => {
     handleFileChange({
       target: {
         name: 'image',
-        value: base64Image  // ✅ Sending proper base64 with data URI
+        value: base64Image
       }
     });
   };

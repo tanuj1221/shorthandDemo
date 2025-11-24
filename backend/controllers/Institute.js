@@ -196,13 +196,24 @@ exports.registerStudent = async (req, res) => {
     email,
   } = req.body;
 
-  // Debug: Log image format received
+  // Validate image size to prevent CPU spikes
   if (image) {
     console.log("Image received:");
     console.log("- Type:", typeof image);
     console.log("- Starts with data:image?", image.startsWith('data:image'));
     console.log("- Length:", image.length);
-    console.log("- First 50 chars:", image.substring(0, 50));
+    
+    // Calculate approximate size in KB
+    const imageSizeKB = (image.length * 0.75) / 1024; // Base64 is ~33% larger than binary
+    console.log("- Approximate size:", imageSizeKB.toFixed(2), "KB");
+    
+    // Reject images larger than 50KB
+    if (imageSizeKB > 50) {
+      return res.status(400).json({
+        success: false,
+        message: `Image too large (${imageSizeKB.toFixed(2)}KB). Maximum allowed is 50KB.`
+      });
+    }
   } else {
     console.log("No image received");
   }
@@ -238,11 +249,13 @@ exports.registerStudent = async (req, res) => {
     const generatedPassword = Math.floor(1000 + Math.random() * 9000).toString();
     console.log("Generated password:", generatedPassword);
 
+    // Batch insert - much faster than loop
     const insertQuery =
-      "INSERT INTO student14 (student_id, password, instituteId, firstName, lastName, motherName, middleName, subjectsId, batchNo, courseId, batch_year, sem, batchStartDate, batchEndDate, amount, loggedIn, rem_time, done, image, mobile_no, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+      "INSERT INTO student14 (student_id, password, instituteId, firstName, lastName, motherName, middleName, subjectsId, batchNo, courseId, batch_year, sem, batchStartDate, batchEndDate, amount, loggedIn, rem_time, done, image, mobile_no, email) VALUES ?";
 
-    // Create one entry per subject
+    // Create one entry per subject - prepare all values at once
     const insertedStudentIds = [];
+    const allValues = [];
     
     for (let i = 0; i < courseIds.length; i++) {
       const currentStudentId = nextStudentId + i;
@@ -250,15 +263,15 @@ exports.registerStudent = async (req, res) => {
       
       const values = [
         currentStudentId,
-        generatedPassword, // Same password for all entries of this student
+        generatedPassword,
         instituteId,
         firstName,
         lastName,
         motherName,
         middleName,
-        JSON.stringify([courseId]), // Store single course ID as array
+        JSON.stringify([courseId]),
         sem || null,
-        JSON.stringify([courseId]), // courseId field
+        JSON.stringify([courseId]),
         batch_year || null,
         sem || null,
         batchStartDate || null,
@@ -272,10 +285,13 @@ exports.registerStudent = async (req, res) => {
         email,
       ];
 
-      console.log(`Inserting student entry ${i + 1}/${courseIds.length} with ID:`, currentStudentId);
-      await connection.query(insertQuery, values);
+      allValues.push(values);
       insertedStudentIds.push(currentStudentId);
     }
+
+    // Single batch insert instead of loop
+    console.log(`Batch inserting ${courseIds.length} student entries`);
+    await connection.query(insertQuery, [allValues]);
 
     console.log("Student registered successfully with IDs:", insertedStudentIds);
 
