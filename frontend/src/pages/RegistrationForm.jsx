@@ -216,18 +216,44 @@ const StudentRegistrationForm = () => {
     console.log('Image format check:');
     console.log('- Starts with data:image?', submissionData.image.startsWith('data:image'));
     console.log('- Image length:', submissionData.image.length);
-    console.log('- First 50 chars:', submissionData.image.substring(0, 50));
+    console.log('- Approximate size KB:', (submissionData.image.length * 0.75 / 1024).toFixed(2));
+    
+    // Warn if image is too large
+    const sizeKB = submissionData.image.length * 0.75 / 1024;
+    if (sizeKB > 40) {
+      alert(`Warning: Image size is ${sizeKB.toFixed(2)}KB. This may cause slow registration. Please use a smaller image.`);
+    }
   }
 
   try {
+    // Show loading state
+    const submitButton = document.querySelector('button[type="button"]:last-child');
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Registering...';
+    }
+
     const response = await axios.post('https://www.shorthandexam.in/registerstudent', submissionData, {
       withCredentials: true,
+      timeout: 120000, // 2 minute timeout
     });
     alert('Student registered successfully!');
     window.location.href = '/dashboard/payfees';
   } catch (error) {
     console.error('Registration failed:', error);
-    alert(error.response?.data?.message || 'Registration failed');
+    
+    // Re-enable button
+    const submitButton = document.querySelector('button[type="button"]:last-child');
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = 'Complete Registration';
+    }
+    
+    if (error.code === 'ECONNABORTED' || error.response?.status === 504) {
+      alert('Registration is taking longer than expected. Please try with a smaller image or contact support.');
+    } else {
+      alert(error.response?.data?.message || 'Registration failed. Please try again.');
+    }
   }
 };
 

@@ -218,20 +218,32 @@ exports.registerStudent = async (req, res) => {
     console.log("No image received");
   }
 
+  // Use transaction to prevent race conditions
+  const conn = await connection.getConnection();
+  
   try {
-    // Optimized query with index hint
-    const [maxIdResult] = await connection.query(
+    await conn.beginTransaction();
+    
+    // Get the maximum student_id globally (not just for this institute)
+    const [globalMaxResult] = await conn.query(
+      "SELECT MAX(student_id) as maxId FROM student14 LIMIT 1"
+    );
+    
+    // Get the maximum for this institute
+    const [instituteMaxResult] = await conn.query(
       "SELECT MAX(student_id) as maxId FROM student14 WHERE instituteId = ? LIMIT 1",
       [instituteId]
     );
 
     let nextStudentId;
-    if (maxIdResult[0].maxId) {
-      nextStudentId = parseInt(maxIdResult[0].maxId) + 1;
-    } else {
-      // First student for this institute, start from a base number
-      nextStudentId = parseInt(instituteId + "001"); // e.g., 11100001
-    }
+    const globalMax = globalMaxResult[0].maxId || 0;
+    const instituteMax = instituteMaxResult[0].maxId || 0;
+    
+    console.log("Global max student_id:", globalMax);
+    console.log("Institute max student_id:", instituteMax);
+    
+    // Use the higher of the two, plus 1
+    nextStudentId = Math.max(globalMax, instituteMax, parseInt(instituteId + "001")) + 1;
 
     console.log("Generated student_id:", nextStudentId);
 
@@ -289,7 +301,7 @@ exports.registerStudent = async (req, res) => {
         email,
       ];
 
-      await connection.query(insertQuery, values);
+      await conn.query(insertQuery, values);
       insertedStudentIds.push(nextStudentId);
     } else {
       // Multiple inserts - use batch
@@ -326,9 +338,10 @@ exports.registerStudent = async (req, res) => {
       });
 
       console.log(`Batch inserting ${courseIds.length} student entries`);
-      await connection.query(insertQuery, [allValues]);
+      await conn.query(insertQuery, [allValues]);
     }
 
+    await conn.commit();
     console.log("Student registered successfully with IDs:", insertedStudentIds);
 
     res.json({
@@ -337,14 +350,22 @@ exports.registerStudent = async (req, res) => {
       temporaryPassword: generatedPassword,
     });
   } catch (err) {
+    await conn.rollback();
+    
     if (err.code === "ER_DUP_ENTRY") {
-      // Handle duplicate student_id - retry with next number
-      console.log("Duplicate student_id, retrying...");
-      return exports.registerStudent(req, res); // Recursive retry
+      console.error("Duplicate student_id detected:", nextStudentId);
+      console.error("This should not happen. Check database for duplicate IDs.");
+      return res.status(500).json({
+        success: false,
+        message: "Student ID conflict. Please try again or contact support.",
+        error: "Duplicate student ID"
+      });
     }
 
     console.error("Error inserting student:", err);
     res.status(500).send("Error registering student");
+  } finally {
+    conn.release();
   }
 };
 

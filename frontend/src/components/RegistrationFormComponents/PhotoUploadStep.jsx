@@ -22,7 +22,7 @@ const PhotoUploadStep = ({ handleFileChange, prevStep, handleSubmit }) => {
   const previewCanvasRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const compressImage = (file, maxSizeKB = 30) => {
+  const compressImage = (file, maxSizeKB = 25) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -32,8 +32,8 @@ const PhotoUploadStep = ({ handleFileChange, prevStep, handleSubmit }) => {
           let width = img.width;
           let height = img.height;
           
-          // Calculate new dimensions while maintaining aspect ratio
-          const maxDimension = 300; // Smaller dimension for better compression
+          // Aggressive compression - smaller dimensions
+          const maxDimension = 200; // Reduced from 300 to 200
           if (width > height && width > maxDimension) {
             height = (height * maxDimension) / width;
             width = maxDimension;
@@ -47,11 +47,11 @@ const PhotoUploadStep = ({ handleFileChange, prevStep, handleSubmit }) => {
           
           const ctx = canvas.getContext('2d');
           ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'medium'; // Changed from 'high' to 'medium'
+          ctx.imageSmoothingQuality = 'low'; // Changed to 'low' for faster processing
           ctx.drawImage(img, 0, 0, width, height);
           
-          // Use fixed quality instead of recursive loop
-          const quality = 0.6; // Fixed quality
+          // Lower quality for smaller size
+          const quality = 0.5; // Reduced from 0.6 to 0.5
           canvas.toBlob((blob) => {
             if (!blob) {
               reject(new Error('Compression failed'));
@@ -60,6 +60,10 @@ const PhotoUploadStep = ({ handleFileChange, prevStep, handleSubmit }) => {
             
             const sizeKB = blob.size / 1024;
             console.log(`Compressed image size: ${sizeKB.toFixed(2)}KB`);
+            
+            if (sizeKB > maxSizeKB) {
+              console.warn(`Image still too large: ${sizeKB.toFixed(2)}KB`);
+            }
             
             // Convert to base64
             const reader = new FileReader();
