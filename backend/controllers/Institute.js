@@ -175,6 +175,12 @@ exports.registerStudent = async (req, res) => {
   const instituteId = req.session.instituteId;
   console.log("Session instituteId:", instituteId);
 
+  // Require institute to be logged in for registration
+  if (!instituteId) {
+    console.error('Registration attempted without institute session');
+    return res.status(403).json({ success: false, message: 'Not authenticated as an institute' });
+  }
+
   const {
     firstName,
     lastName,
@@ -221,6 +227,9 @@ exports.registerStudent = async (req, res) => {
   // Use transaction to prevent race conditions
   const conn = await connection.getConnection();
   
+  // Declare here so catch() can reference it safely if an error occurs
+  let nextStudentId = null;
+
   try {
     await conn.beginTransaction();
     
@@ -235,7 +244,6 @@ exports.registerStudent = async (req, res) => {
       [instituteId]
     );
 
-    let nextStudentId;
     const globalMax = globalMaxResult[0].maxId || 0;
     const instituteMax = instituteMaxResult[0].maxId || 0;
     
@@ -301,6 +309,10 @@ exports.registerStudent = async (req, res) => {
         email,
       ];
 
+      // Debug: log query and parameters
+      console.log('RegisterStudent - Single insert query:', insertQuery);
+      console.log('RegisterStudent - parameters:', values);
+
       await conn.query(insertQuery, values);
       insertedStudentIds.push(nextStudentId);
     } else {
@@ -338,6 +350,9 @@ exports.registerStudent = async (req, res) => {
       });
 
       console.log(`Batch inserting ${courseIds.length} student entries`);
+      // Debug: log batch insert query and a sample of the values
+      console.log('RegisterStudent - Batch insert query:', insertQuery);
+      console.log('RegisterStudent - batch values sample (first row):', allValues[0]);
       await conn.query(insertQuery, [allValues]);
     }
 
@@ -362,8 +377,17 @@ exports.registerStudent = async (req, res) => {
       });
     }
 
-    console.error("Error inserting student:", err);
-    res.status(500).send("Error registering student");
+    console.error("Error inserting student:", {
+      message: err.message,
+      stack: err.stack,
+      code: err.code,
+      sql: err.sql
+    });
+    res.status(500).json({
+      success: false,
+      message: "Error registering student",
+      error: err.message
+    });
   } finally {
     conn.release();
   }

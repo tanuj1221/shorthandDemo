@@ -5,6 +5,75 @@ const csv = require('csv-parser');
 const fs = require('fs');
 
 const pool = require('../config/db1');
+
+// Generate unique UTR number
+const generateUTR = () => {
+  const timestamp = Date.now().toString().slice(-6);
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return `UTR${timestamp}${random}`;
+};
+
+// Bulk approve students
+exports.bulkApproveStudents = async (req, res) => {
+  const { studentIds } = req.body;
+  if (!Array.isArray(studentIds) || studentIds.length === 0) {
+    return res.status(400).json({ error: 'studentIds array required' });
+  }
+  // Perform a single transactional update using a CASE expression so the DB
+  // updates all rows in one statement (reduces per-row side-effects/notifications).
+  let conn;
+  try {
+    conn = await connection.getConnection();
+    await conn.beginTransaction();
+
+    // Build CASE expression to set a unique UTR for each student_id
+    const caseParts = [];
+    const caseParams = [];
+    for (const id of studentIds) {
+      const utr = generateUTR();
+      caseParts.push('WHEN ? THEN ?');
+      caseParams.push(id, utr);
+    }
+
+    const caseExpr = `CASE student_id ${caseParts.join(' ')} ELSE utr_number END`;
+    const inPlaceholders = studentIds.map(() => '?').join(',');
+
+    const updateQuery = `
+      UPDATE student14
+      SET amount = 'paid', utr_number = ${caseExpr}
+      WHERE student_id IN (${inPlaceholders}) AND amount = 'waiting'
+    `;
+
+    const params = [...caseParams, ...studentIds];
+
+    const [result] = await conn.query(updateQuery, params);
+
+    // After update, check which requested IDs did not become 'paid'
+    const [notPaidRows] = await conn.query(
+      'SELECT student_id FROM student14 WHERE student_id IN (?) AND amount != ?',
+      [studentIds, 'paid']
+    );
+
+    const failedIds = (notPaidRows || []).map(r => r.student_id);
+    const approvedCount = (studentIds.length - failedIds.length) || (result.affectedRows || 0);
+
+    await conn.commit();
+    conn.release();
+
+    res.json({ approvedCount, failedIds });
+  } catch (err) {
+    console.error('Bulk approve error:', err);
+    try {
+      if (conn) {
+        await conn.rollback();
+        conn.release();
+      }
+    } catch (rbErr) {
+      console.error('Rollback error:', rbErr);
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
 exports.getDistricts = async (req, res) => {
   try {
     const batchQuery = "SELECT * FROM district";
@@ -599,26 +668,27 @@ exports.approveStudent = async (req, res) => {
   const { student_id } = req.body;
 
   if (!student_id) {
-    return res.status(400).send('Student ID is required');
+    return res.status(400).json({ error: 'Student ID is required' });
   }
 
   try {
+    const utr = generateUTR();
     const updateQuery = `
         UPDATE student14
-        SET amount = 'paid'
+        SET amount = 'paid', utr_number = ?
         WHERE student_id = ? AND amount = 'waiting';
       `;
 
-    const [result] = await connection.query(updateQuery, [student_id]);
+    const [result] = await connection.query(updateQuery, [utr, student_id]);
 
     if (result.affectedRows > 0) {
-      res.send({ message: 'Student approved successfully', studentId: student_id });
+      res.json({ message: 'Student approved successfully', studentId: student_id, utr: utr });
     } else {
-      res.status(404).send('Student not found or was not in waiting status');
+      res.status(404).json({ error: 'Student not found or was not in waiting status' });
     }
   } catch (err) {
     console.log('Error approving student:', err);
-    res.status(500).send(err.message);
+    res.status(500).json({ error: err.message });
   }
 };
 

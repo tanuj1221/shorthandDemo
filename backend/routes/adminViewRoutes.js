@@ -29,6 +29,7 @@ router.get('/paid-students', adminView.getPaidStudents);
 router.post('/admin_login', adminView.loginadmin);
 router.get('/approve', adminView.getAllWaitingStudents);
 router.post('/approved_student', adminView.approveStudent);
+router.post('/approved_students_bulk', adminView.bulkApproveStudents);
 router.post('/rejected_student', adminView.rejectStudent);
 router.get('/student/status-counts', adminView.getStudentStatusCounts);
 
