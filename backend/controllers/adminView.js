@@ -548,17 +548,29 @@ exports.getPaidStudents = async (req, res) => {
 exports.getAllWaitingStudents = async (req, res) => {
   try {
     console.log('Starting query execution...');
-
-    const detailsQuery = `
+    
+    const { utr } = req.query;
+    let detailsQuery = `
             SELECT qrpay.*, student14.instituteId, student14.student_id
             FROM qrpay
             INNER JOIN student14 ON qrpay.student_id = student14.student_id
-            WHERE student14.amount = 'waiting';
+            WHERE student14.amount = 'waiting'
         `;
+    
+    const queryParams = [];
+    
+    // Add UTR filter if provided
+    if (utr && utr.trim()) {
+      detailsQuery += ` AND qrpay.utr LIKE ?`;
+      queryParams.push(`%${utr.trim()}%`);
+      console.log('Filtering by UTR:', utr);
+    }
+    
+    detailsQuery += ';';
 
-    console.log('Executing SQL:', detailsQuery);
+    console.log('Executing SQL:', detailsQuery, 'with params:', queryParams);
 
-    const [details] = await connection.query(detailsQuery);
+    const [details] = await connection.query(detailsQuery, queryParams);
 
     console.log('Query result:', details); // Log raw result
 
@@ -572,7 +584,7 @@ exports.getAllWaitingStudents = async (req, res) => {
       res.send(details);
     } else {
       console.log('No waiting students found');
-      res.status(404).send('No waiting students found');
+      res.send([]); // Return empty array instead of 404 for better UX
     }
   } catch (err) {
     console.error('🚨 Full error object:', err); // Log full error including stack, code, sqlMessage
@@ -618,6 +630,38 @@ exports.approveStudent = async (req, res) => {
     }
   } catch (err) {
     console.log('Error approving student:', err);
+    res.status(500).send(err.message);
+  }
+};
+
+// Bulk approve students
+exports.bulkApproveStudents = async (req, res) => {
+  const { student_ids } = req.body;
+
+  if (!student_ids || !Array.isArray(student_ids) || student_ids.length === 0) {
+    return res.status(400).send('Student IDs array is required');
+  }
+
+  try {
+    const placeholders = student_ids.map(() => '?').join(',');
+    const updateQuery = `
+      UPDATE student14
+      SET amount = 'paid'
+      WHERE student_id IN (${placeholders}) AND amount = 'waiting';
+    `;
+
+    const [result] = await connection.query(updateQuery, student_ids);
+
+    if (result.affectedRows > 0) {
+      res.send({ 
+        message: `${result.affectedRows} student(s) approved successfully`, 
+        count: result.affectedRows 
+      });
+    } else {
+      res.status(404).send('No students found or none were in waiting status');
+    }
+  } catch (err) {
+    console.log('Error bulk approving students:', err);
     res.status(500).send(err.message);
   }
 };

@@ -2,6 +2,27 @@ const connection = require("../config/db1");
 const fs = require('fs');
 const xlsx = require('xlsx');
 
+// Subject mapping configuration
+const SUBJECT_MAP = {
+  "Shorthand Dummy Subject": 101,
+  "English Shorthand 60 wpm": 50,
+  "English Shorthand 80 wpm": 51,
+  "English Shorthand 100 wpm": 52,
+  "English Shorthand 120 wpm": 53,
+  "English Shorthand 130 wpm": 54,
+  "English Shorthand 140 wpm": 55,
+  "English Shorthand 150 wpm": 56,
+  "English Shorthand 160 wpm": 57,
+  "Marathi Shorthand 60 wpm": 60,
+  "Marathi Shorthand 80 wpm": 61,
+  "Marathi Shorthand 100 wpm": 62,
+  "Marathi Shorthand 120 wpm": 63,
+  "Hindi Shorthand 60 wpm": 70,
+  "Hindi Shorthand 80 wpm": 71,
+  "Hindi Shorthand 100 wpm": 72,
+  "Hindi Shorthand 120 wpm": 73
+};
+
 /**
  * Helper function to strip data URI prefix from base64 images
  * For .NET applications that need raw base64 without the prefix
@@ -220,6 +241,7 @@ exports.registerStudent = async (req, res) => {
 
   // Use transaction to prevent race conditions
   const conn = await connection.getConnection();
+  let nextStudentId; // Declare outside try block so it's accessible in catch
   
   try {
     await conn.beginTransaction();
@@ -235,7 +257,6 @@ exports.registerStudent = async (req, res) => {
       [instituteId]
     );
 
-    let nextStudentId;
     const globalMax = globalMaxResult[0].maxId || 0;
     const instituteMax = instituteMaxResult[0].maxId || 0;
     
@@ -243,11 +264,27 @@ exports.registerStudent = async (req, res) => {
     console.log("Institute max student_id:", instituteMax);
     
     // Use the higher of the two, plus 1
-    nextStudentId = Math.max(globalMax, instituteMax, parseInt(instituteId + "001")) + 1;
+    const baseId = Math.max(globalMax, instituteMax, parseInt(instituteId + "001"));
+    nextStudentId = baseId + 1;
 
+    console.log("Base ID:", baseId);
     console.log("Generated student_id:", nextStudentId);
-
-
+    
+    // Verify the generated ID doesn't exist (extra safety check)
+    const [existingCheck] = await conn.query(
+      "SELECT COUNT(*) as count FROM student14 WHERE student_id = ?",
+      [nextStudentId]
+    );
+    
+    if (existingCheck[0].count > 0) {
+      console.log("ID already exists, incrementing...");
+      // If by any chance the ID exists, find the next available one
+      const [maxCheck] = await conn.query(
+        "SELECT MAX(student_id) as maxId FROM student14"
+      );
+      nextStudentId = (maxCheck[0].maxId || 0) + 1;
+      console.log("New student_id after conflict check:", nextStudentId);
+    }
 
     // Map subject names to IDs
     let courseIds = [];
@@ -812,27 +849,6 @@ exports.getStudentPaymentsStatus = async (req, res) => {
       }
     });
   }
-};
-
-
-const SUBJECT_MAP = {
-  "Shorthand Dummy Subject": 101,
-  "English Shorthand 60 wpm": 50,
-  "English Shorthand 80 wpm": 51,
-  "English Shorthand 100 wpm": 52,
-  "English Shorthand 120 wpm": 53,
-  "English Shorthand 130 wpm": 54,
-  "English Shorthand 140 wpm": 55,
-  "English Shorthand 150 wpm": 56,
-  "English Shorthand 160 wpm": 57,
-  "Marathi Shorthand 60 wpm": 60,
-  "Marathi Shorthand 80 wpm": 61,
-  "Marathi Shorthand 100 wpm": 62,
-  "Marathi Shorthand 120 wpm": 63,
-  "Hindi Shorthand 60 wpm": 70,
-  "Hindi Shorthand 80 wpm": 71,
-  "Hindi Shorthand 100 wpm": 72,
-  "Hindi Shorthand 120 wpm": 73
 };
 
 exports.submitAudio = async (req, res) => {

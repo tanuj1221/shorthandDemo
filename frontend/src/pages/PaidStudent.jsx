@@ -4,17 +4,19 @@ import axios from 'axios';
 
 export default function PaidStudentsTable() {
   const [paidStudents, setPaidStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalStudents, setTotalStudents] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [utrFilter, setUtrFilter] = useState('');
 
   useEffect(() => {
     const fetchPaidStudents = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('https://www.shorthandexam.in/paid-students', {
+        const response = await axios.get('http://localhost:3001/paid-students', {
           params: {
             page: currentPage,
             pageSize: pageSize
@@ -23,12 +25,14 @@ export default function PaidStudentsTable() {
         });
         
         setPaidStudents(response.data.data);
+        setFilteredStudents(response.data.data);
         setTotalStudents(response.data.totalStudents);
         setError(null);
       } catch (err) {
         console.error('Error fetching paid students:', err);
         setError('Failed to fetch paid students. Please try again later.');
         setPaidStudents([]);
+        setFilteredStudents([]);
       } finally {
         setLoading(false);
       }
@@ -36,6 +40,19 @@ export default function PaidStudentsTable() {
 
     fetchPaidStudents();
   }, [currentPage, pageSize]);
+
+  // Get unique UTR numbers
+  const uniqueUtrNumbers = [...new Set(paidStudents.map(student => student.utr).filter(utr => utr))];
+
+  // Filter students by UTR number
+  useEffect(() => {
+    if (!utrFilter || utrFilter === 'all') {
+      setFilteredStudents(paidStudents);
+    } else {
+      const filtered = paidStudents.filter(student => student.utr === utrFilter);
+      setFilteredStudents(filtered);
+    }
+  }, [utrFilter, paidStudents]);
 
   const totalPages = Math.ceil(totalStudents / pageSize);
 
@@ -68,6 +85,31 @@ export default function PaidStudentsTable() {
             Total Paid Students: {totalStudents}
           </p>
 
+          {/* UTR Filter Dropdown */}
+          <div className="mb-6">
+            <label htmlFor="utrFilter" className="block text-sm font-medium text-gray-700 mb-2">
+              Filter by UTR Number
+            </label>
+            <select
+              id="utrFilter"
+              value={utrFilter}
+              onChange={(e) => setUtrFilter(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+            >
+              <option value="all">All UTR Numbers ({totalStudents} students)</option>
+              {uniqueUtrNumbers.sort().map((utr) => (
+                <option key={utr} value={utr}>
+                  {utr} ({paidStudents.filter(s => s.utr === utr).length} student{paidStudents.filter(s => s.utr === utr).length > 1 ? 's' : ''})
+                </option>
+              ))}
+            </select>
+            {utrFilter && utrFilter !== 'all' && (
+              <p className="mt-2 text-sm text-gray-600">
+                Showing {filteredStudents.length} student(s) with UTR: {utrFilter}
+              </p>
+            )}
+          </div>
+
           {loading ? (
             <div className="text-center py-8">
               <p className="text-gray-500">Loading paid students...</p>
@@ -93,8 +135,8 @@ export default function PaidStudentsTable() {
                     </tr>
                   </thead>
                   <tbody>
-                    {paidStudents.length > 0 ? (
-                      paidStudents.map((student) => (
+                    {filteredStudents.length > 0 ? (
+                      filteredStudents.map((student) => (
                         <tr key={student.student_id} className="hover:bg-gray-50">
                           <td className="py-3 px-4 border-b">{student.student_id}</td>
                           <td className="py-3 px-4 border-b">{student.user}</td>
@@ -113,7 +155,7 @@ export default function PaidStudentsTable() {
                     ) : (
                       <tr>
                         <td colSpan="8" className="py-8 text-center text-gray-500"> {/* Updated colspan to 8 */}
-                          No paid students found
+                          {utrFilter && utrFilter !== 'all' ? 'No students found with this UTR number' : 'No paid students found'}
                         </td>
                       </tr>
                     )}
@@ -124,7 +166,7 @@ export default function PaidStudentsTable() {
               {/* Pagination controls - same as before */}
               <div className="flex flex-col sm:flex-row justify-between items-center mt-6">
                 <div className="text-sm text-gray-500 mb-4 sm:mb-0">
-                  Showing {paidStudents.length} of {totalStudents} paid students
+                  Showing {filteredStudents.length} of {totalStudents} paid students
                 </div>
 
                 <div className="flex items-center">

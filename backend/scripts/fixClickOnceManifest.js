@@ -14,7 +14,7 @@
  * In Visual Studio:
  * 1. Right-click your project → Properties → Publish
  * 2. Set "Publishing Folder Location" to match your server path
- * 3. Set "Installation Folder URL" to: https://www.shorthandexam.in/storage/publish/
+ * 3. Set "Installation Folder URL" to: http://localhost:3001/storage/publish/
  * 4. Under "Application Files" button, ensure all files are included
  * 5. Under "Prerequisites" button, configure .NET Framework requirements
  * 6. Click "Publish Now"
@@ -48,11 +48,11 @@ if (fs.existsSync(manifestPath)) {
   }
   
   console.log('\n📋 Recommended Actions:');
-  console.log('1. Re-publish from Visual Studio with Installation URL: https://www.shorthandexam.in/storage/publish/');
+  console.log('1. Re-publish from Visual Studio with Installation URL: http://localhost:3001/storage/publish/');
   console.log('2. Or use the setup.exe file instead of the .application file');
   console.log('3. Or sign the manifests with a code signing certificate');
   console.log('\n💡 Quick Fix: Direct users to use setup.exe instead:');
-  console.log('   https://www.shorthandexam.in/storage/publish/setup.exe');
+  console.log('   http://localhost:3001/storage/publish/setup.exe');
   
 } else {
   console.log('❌ Manifest file not found at:', manifestPath);

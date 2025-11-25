@@ -19,7 +19,7 @@ Both features are straightforward updates that improve user experience and maint
 
 **Approach:**
 - Replace three `<a>` tags with React Router `<Link>` components
-- Update href from `https://www.shorthandexam.in/storage/publish/publish.htm` to `/dashboard/overview`
+- Update href from `http://localhost:3001/storage/publish/publish.htm` to `/dashboard/overview`
 - Maintain existing styling and behavior
 
 ### Feature 2: File Naming with URL Encoding
@@ -42,7 +42,7 @@ Both features are straightforward updates that improve user experience and maint
 **Current Implementation:**
 ```jsx
 <a
-  href="https://www.shorthandexam.in/storage/publish/publish.htm"
+  href="http://localhost:3001/storage/publish/publish.htm"
   target="_blank"
   rel="noopener noreferrer"
   className="..."

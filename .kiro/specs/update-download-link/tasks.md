@@ -10,7 +10,7 @@
 
 
   - Replace three `<a>` tags with React Router `<Link>` components in Navbar.jsx
-  - Change href from `https://www.shorthandexam.in/storage/publish/publish.htm` to `/dashboard/overview`
+  - Change href from `http://localhost:3001/storage/publish/publish.htm` to `/dashboard/overview`
   - Update desktop menu download link
   - Update tablet dropdown download link
   - Update mobile dropdown download link

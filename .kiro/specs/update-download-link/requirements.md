@@ -28,7 +28,7 @@ This specification addresses two key improvements to the application:
 1. WHEN a user clicks the Download link in the desktop navigation menu, THE Navbar Component SHALL navigate to the route `/dashboard/overview`
 2. WHEN a user clicks the Download Demo link in the tablet dropdown menu, THE Navbar Component SHALL navigate to the route `/dashboard/overview`
 3. WHEN a user clicks the Download Demo link in the mobile dropdown menu, THE Navbar Component SHALL navigate to the route `/dashboard/overview`
-4. THE Navbar Component SHALL remove all references to the S3 URL `https://www.shorthandexam.in/storage/publish/publish.htm`
+4. THE Navbar Component SHALL remove all references to the S3 URL `http://localhost:3001/storage/publish/publish.htm`
 5. THE Navbar Component SHALL use React Router Link component instead of anchor tags for internal navigation
 
 ### Requirement 2

@@ -3,7 +3,7 @@
   <assemblyIdentity name="ShorthandBasic v1.0.application" version="1.0.0.60" publicKeyToken="0000000000000000" language="neutral" processorArchitecture="msil" xmlns="urn:schemas-microsoft-com:asm.v1" />
   <description asmv2:publisher="ShorthandBasic v1.0" asmv2:product="ShorthandBasic v1.0" xmlns="urn:schemas-microsoft-com:asm.v1" />
   <deployment install="false" mapFileExtensions="true" co.v1:createDesktopShortcut="true">
-    <deploymentProvider codebase="https://www.shorthandexam.in/storage/publish/ShorthandBasic_v1.0.application" />
+    <deploymentProvider codebase="http://localhost:3001/storage/publish/ShorthandBasic_v1.0.application" />
   </deployment>
   <compatibleFrameworks xmlns="urn:schemas-microsoft-com:clickonce.v2">
     <framework targetVersion="4.8" profile="Full" supportedRuntime="4.0.30319" />

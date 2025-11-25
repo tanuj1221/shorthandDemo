@@ -2,7 +2,7 @@
 module.exports = {
   // Base URL for file storage
   // Change this to your production domain when deploying
-  BASE_URL: 'https://www.shorthandexam.in',
+  BASE_URL: 'http://localhost:3001',
   
   // For local development, use:
   // BASE_URL: 'http://localhost:3001',
