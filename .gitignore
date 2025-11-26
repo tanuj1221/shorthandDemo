@@ -1,3 +1,11 @@
 node_modules
 
 /uploads/audio
+
+# Database backup and dump files
+*.sql.gz
+*_backup.sql
+*_dump.sql
+sh_demo_backup.sql
+sh_demo_dump.sql
+demo_backup.sql
