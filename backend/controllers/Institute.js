@@ -307,6 +307,8 @@ exports.registerStudent = async (req, res) => {
 
     // Validate we have subjects
     if (courseIds.length === 0) {
+      await conn.rollback();
+      conn.release();
       return res.status(400).json({
         success: false,
         message: "No valid subjects selected"
@@ -401,7 +403,7 @@ exports.registerStudent = async (req, res) => {
     await conn.rollback();
     
     if (err.code === "ER_DUP_ENTRY") {
-      console.error("Duplicate student_id detected:", nextStudentId);
+      console.error("Duplicate student_id detected:", nextStudentId || "unknown");
       console.error("This should not happen. Check database for duplicate IDs.");
       return res.status(500).json({
         success: false,
@@ -411,7 +413,16 @@ exports.registerStudent = async (req, res) => {
     }
 
     console.error("Error inserting student:", err);
-    res.status(500).send("Error registering student");
+    console.error("Error details:", {
+      message: err.message,
+      code: err.code,
+      stack: err.stack
+    });
+    res.status(500).json({
+      success: false,
+      message: "Error registering student",
+      error: err.message
+    });
   } finally {
     conn.release();
   }
