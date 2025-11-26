@@ -17,8 +17,8 @@ const ContactManagement = () => {
   const fetchContacts = async () => {
     try {
       const url = filterStatus 
-        ? `http://localhost:3001/api/admin/contacts?status=${filterStatus}`
-        : 'http://localhost:3001/api/admin/contacts';
+        ? `https://www.shorthandexam.in/api/admin/contacts?status=${filterStatus}`
+        : 'https://www.shorthandexam.in/api/admin/contacts';
       
       const response = await axios.get(url);
       if (response.data.success) {
@@ -33,7 +33,7 @@ const ContactManagement = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/admin/contacts/stats');
+      const response = await axios.get('https://www.shorthandexam.in/api/admin/contacts/stats');
       if (response.data.success) {
         setStats(response.data.stats);
       }
@@ -44,7 +44,7 @@ const ContactManagement = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(`http://localhost:3001/api/admin/contacts/${id}/status`, { status });
+      await axios.put(`https://www.shorthandexam.in/api/admin/contacts/${id}/status`, { status });
       fetchContacts();
       fetchStats();
       if (selectedContact?.id === id) {
@@ -60,7 +60,7 @@ const ContactManagement = () => {
     if (!window.confirm('Are you sure you want to delete this contact submission?')) return;
     
     try {
-      await axios.delete(`http://localhost:3001/api/admin/contacts/${id}`);
+      await axios.delete(`https://www.shorthandexam.in/api/admin/contacts/${id}`);
       fetchContacts();
       fetchStats();
       if (selectedContact?.id === id) {

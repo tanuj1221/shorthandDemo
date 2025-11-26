@@ -99,7 +99,7 @@
 //       setHasChanges(false);
 //       setSearchTerm('');
 
-//       const response = await axios.get(`http://localhost:3001/table/${tableName}`, {
+//       const response = await axios.get(`https://www.shorthandexam.in/table/${tableName}`, {
 //         headers: {
 //           Authorization: 'Bearer dummy-token'
 //         }
@@ -171,7 +171,7 @@
 //       }
 
 //       const response = await axios.post(
-//         `http://localhost:3001/table/${tableName}/add`,
+//         `https://www.shorthandexam.in/table/${tableName}/add`,
 //         newRecord,
 //         {
 //           headers: {
@@ -645,7 +645,7 @@
 
 //       setIsSubmitting(true);
 //       const response = await axios.delete(
-//         `http://localhost:3001/table/${tableName}/delete`,
+//         `https://www.shorthandexam.in/table/${tableName}/delete`,
 //         {
 //           data: recordToDelete,
 //           headers: {
@@ -699,7 +699,7 @@
 //       const preparedChanges = prepareDataForSubmission(changes);
 
 //       const response = await axios.put(
-//         `http://localhost:3001/table/${tableName}`,
+//         `https://www.shorthandexam.in/table/${tableName}`,
 //         preparedChanges,
 //         {
 //           headers: {
@@ -1286,7 +1286,7 @@ export default function DataTable({ tableName }) {
       setHasChanges(false);
       setSearchTerm('');
 
-      const response = await axios.get(`http://localhost:3001/table/${tableName}`, {
+      const response = await axios.get(`https://www.shorthandexam.in/table/${tableName}`, {
         headers: {
           Authorization: 'Bearer dummy-token'
         }
@@ -1451,7 +1451,7 @@ export default function DataTable({ tableName }) {
       }
 
       const response = await axios.post(
-        `http://localhost:3001/table/${tableName}/add`,
+        `https://www.shorthandexam.in/table/${tableName}/add`,
         newRecord,
         {
           headers: {
@@ -1850,7 +1850,7 @@ export default function DataTable({ tableName }) {
 
       setIsSubmitting(true);
       const response = await axios.delete(
-        `http://localhost:3001/table/${tableName}/delete`,
+        `https://www.shorthandexam.in/table/${tableName}/delete`,
         {
           data: recordToDelete,
           headers: {
@@ -1904,7 +1904,7 @@ export default function DataTable({ tableName }) {
       const preparedChanges = prepareDataForSubmission(changes);
 
       const response = await axios.put(
-        `http://localhost:3001/table/${tableName}`,
+        `https://www.shorthandexam.in/table/${tableName}`,
         preparedChanges,
         {
           headers: {

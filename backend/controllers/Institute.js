@@ -246,29 +246,39 @@ exports.registerStudent = async (req, res) => {
   try {
     await conn.beginTransaction();
     
-    // Get the maximum student_id globally (not just for this institute)
-    const [globalMaxResult] = await conn.query(
-      "SELECT MAX(student_id) as maxId FROM student14 LIMIT 1"
-    );
+    // Determine batch number based on current month
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1; // 1-12
+
+    // June batch (1) = Jan-June, December batch (2) = July-Dec
+    const batchNumber = currentMonth <= 6 ? 1 : 2;
+
+    // Create prefix: YY + B (e.g., "241" for June 2024, "242" for Dec 2024)
+    const yearPrefix = currentYear.toString().slice(-2); // "24"
+    const prefix = `${yearPrefix}${batchNumber}`; // "241" or "242"
+
+    console.log("Year:", currentYear);
+    console.log("Batch:", batchNumber, "(1=June, 2=December)");
+    console.log("Prefix:", prefix);
+
+    // Get the maximum student_id for this year-batch combination
+    // No upper limit - can grow beyond 9999 (e.g., 2410001, 2410002... 24110000, 24110001...)
+    const minId = parseInt(`${prefix}0000`);
+    const nextPrefix = parseInt(prefix) + 1;
+    const maxId = parseInt(`${nextPrefix}0000`);
     
-    // Get the maximum for this institute
-    const [instituteMaxResult] = await conn.query(
-      "SELECT MAX(student_id) as maxId FROM student14 WHERE instituteId = ? LIMIT 1",
-      [instituteId]
+    const [batchMaxResult] = await conn.query(
+      "SELECT MAX(student_id) as maxId FROM student14 WHERE student_id >= ? AND student_id < ? LIMIT 1",
+      [minId, maxId]
     );
 
-    const globalMax = globalMaxResult[0].maxId || 0;
-    const instituteMax = instituteMaxResult[0].maxId || 0;
-    
-    console.log("Global max student_id:", globalMax);
-    console.log("Institute max student_id:", instituteMax);
-    
-    // Use the higher of the two, plus 1
-    const baseId = Math.max(globalMax, instituteMax, parseInt(instituteId + "001"));
-    nextStudentId = baseId + 1;
+    const batchMax = batchMaxResult[0].maxId || (minId - 1);
+    nextStudentId = batchMax + 1;
 
-    console.log("Base ID:", baseId);
+    console.log("Batch max student_id:", batchMax);
     console.log("Generated student_id:", nextStudentId);
+    console.log("(No limit - can grow beyond 9999)");
     
     // Verify the generated ID doesn't exist (extra safety check)
     const [existingCheck] = await conn.query(
@@ -280,9 +290,10 @@ exports.registerStudent = async (req, res) => {
       console.log("ID already exists, incrementing...");
       // If by any chance the ID exists, find the next available one
       const [maxCheck] = await conn.query(
-        "SELECT MAX(student_id) as maxId FROM student14"
+        "SELECT MAX(student_id) as maxId FROM student14 WHERE student_id >= ? AND student_id < ?",
+        [minId, maxId]
       );
-      nextStudentId = (maxCheck[0].maxId || 0) + 1;
+      nextStudentId = (maxCheck[0].maxId || (minId - 1)) + 1;
       console.log("New student_id after conflict check:", nextStudentId);
     }
 

@@ -41,7 +41,7 @@
 // //     const fetchStudents = async () => {
 // //       try {
 // //         setIsLoading(true);
-// //         const response = await axios.get("http://localhost:3001/students", {
+// //         const response = await axios.get("https://www.shorthandexam.in/students", {
 // //           withCredentials: true,
 // //         });
 
@@ -133,7 +133,7 @@
 // //       };
 
 // //       const response = await axios.put(
-// //         `http://localhost:3001/students/${updatedData.id}`,
+// //         `https://www.shorthandexam.in/students/${updatedData.id}`,
 // //         backendData,
 // //         { 
 // //           withCredentials: true,
@@ -203,7 +203,7 @@
 // //       for (const studentId of selected) {
 // //         try {
 // //           await axios.delete(
-// //             `http://localhost:3001/studentsdel/${studentId}`,
+// //             `https://www.shorthandexam.in/studentsdel/${studentId}`,
 // //             { withCredentials: true }
 // //           );
 // //           successCount++;
@@ -213,7 +213,7 @@
 // //       }
 
 // //       // Refresh the student list after deletion
-// //       const response = await axios.get("http://localhost:3001/students", {
+// //       const response = await axios.get("https://www.shorthandexam.in/students", {
 // //         withCredentials: true,
 // //       });
 // //       const transformedStudents = response.data.map((student) => ({
@@ -275,7 +275,7 @@
 // //       const amount = selected.length * prices[subscriptionMode];
 
 // //       const response = await axios.post(
-// //         "http://localhost:3001/api/payments",
+// //         "https://www.shorthandexam.in/api/payments",
 // //         {
 // //           studentIds: selected,
 // //           amount,
@@ -327,7 +327,7 @@
 // //       const amount = selected.length * prices[subscriptionMode];
 
 // //       const response = await axios.post(
-// //         "http://localhost:3001/api/payments/qr",
+// //         "https://www.shorthandexam.in/api/payments/qr",
 // //         {
 // //           studentIds: selected,
 // //           amount,
@@ -515,7 +515,7 @@
 //     const fetchStudents = async () => {
 //       try {
 //         setIsLoading(true);
-//         const response = await axios.get("http://localhost:3001/students", {
+//         const response = await axios.get("https://www.shorthandexam.in/students", {
 //           withCredentials: true,
 //         });
 
@@ -612,7 +612,7 @@
 //       };
 
 //       const response = await axios.put(
-//         `http://localhost:3001/students/${updatedData.id}`,
+//         `https://www.shorthandexam.in/students/${updatedData.id}`,
 //         backendData,
 //         { 
 //           withCredentials: true,
@@ -682,7 +682,7 @@
 //       for (const studentId of selected) {
 //         try {
 //           await axios.delete(
-//             `http://localhost:3001/studentsdel/${studentId}`,
+//             `https://www.shorthandexam.in/studentsdel/${studentId}`,
 //             { withCredentials: true }
 //           );
 //           successCount++;
@@ -692,7 +692,7 @@
 //       }
 
 //       // Refresh the student list after deletion
-//       const response = await axios.get("http://localhost:3001/students", {
+//       const response = await axios.get("https://www.shorthandexam.in/students", {
 //         withCredentials: true,
 //       });
 //       const transformedStudents = response.data.map((student) => ({
@@ -754,7 +754,7 @@
 //       const amount = selected.length * prices[subscriptionMode];
 
 //       const response = await axios.post(
-//         "http://localhost:3001/api/payments",
+//         "https://www.shorthandexam.in/api/payments",
 //         {
 //           studentIds: selected,
 //           amount,
@@ -798,7 +798,7 @@
 //   // **UPDATED: Refresh students after successful payment**
 //   const refreshStudentsAfterPayment = async () => {
 //     try {
-//       const response = await axios.get("http://localhost:3001/students", {
+//       const response = await axios.get("https://www.shorthandexam.in/students", {
 //         withCredentials: true,
 //       });
 //       const transformedStudents = response.data.map((student) => ({
@@ -1050,7 +1050,7 @@ const FeesPayment = () => {
     const fetchStudents = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get("http://localhost:3001/students", {
+        const response = await axios.get("https://www.shorthandexam.in/students", {
           withCredentials: true,
         });
 
@@ -1147,7 +1147,7 @@ const FeesPayment = () => {
       };
 
       const response = await axios.put(
-        `http://localhost:3001/students/${updatedData.id}`,
+        `https://www.shorthandexam.in/students/${updatedData.id}`,
         backendData,
         { 
           withCredentials: true,
@@ -1217,7 +1217,7 @@ const FeesPayment = () => {
       for (const studentId of selected) {
         try {
           await axios.delete(
-            `http://localhost:3001/studentsdel/${studentId}`,
+            `https://www.shorthandexam.in/studentsdel/${studentId}`,
             { withCredentials: true }
           );
           successCount++;
@@ -1227,7 +1227,7 @@ const FeesPayment = () => {
       }
 
       // Refresh the student list after deletion
-      const response = await axios.get("http://localhost:3001/students", {
+      const response = await axios.get("https://www.shorthandexam.in/students", {
         withCredentials: true,
       });
       const transformedStudents = response.data.map((student) => ({
@@ -1291,7 +1291,7 @@ const FeesPayment = () => {
       const amount = selected.length * prices[subscriptionMode];
 
       const response = await axios.post(
-        "http://localhost:3001/api/payments",
+        "https://www.shorthandexam.in/api/payments",
         {
           studentIds: selected,
           amount,
@@ -1335,7 +1335,7 @@ const FeesPayment = () => {
   // Refresh students after successful payment
   const refreshStudentsAfterPayment = async () => {
     try {
-      const response = await axios.get("http://localhost:3001/students", {
+      const response = await axios.get("https://www.shorthandexam.in/students", {
         withCredentials: true,
       });
       const transformedStudents = response.data.map((student) => ({

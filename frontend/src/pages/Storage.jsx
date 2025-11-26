@@ -221,7 +221,7 @@ const Storage = () => {
   const fetchStorage = async (keepCurrentFolder = false) => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:3001/api/storage/structure', {
+      const response = await axios.get('https://www.shorthandexam.in/api/storage/structure', {
         withCredentials: true
       });
       const newFolders = response.data.data;
@@ -259,7 +259,7 @@ const Storage = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3001/api/storage/folder', {
+      const response = await axios.post('https://www.shorthandexam.in/api/storage/folder', {
         folderName: newFolderName,
         description: newFolderDesc,
         parentId: currentFolder?.id || null
@@ -333,7 +333,7 @@ const Storage = () => {
       setUploadProgress(0);
       setUploadStatus(`Preparing to upload ${files.length} file(s)...`);
       
-      await axios.post('http://localhost:3001/api/storage/upload', formData, {
+      await axios.post('https://www.shorthandexam.in/api/storage/upload', formData, {
         withCredentials: true,
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
@@ -386,7 +386,7 @@ const Storage = () => {
     if (!window.confirm('Delete this folder and all its files?')) return;
 
     try {
-      await axios.delete(`http://localhost:3001/api/storage/folder/${folderId}`, {
+      await axios.delete(`https://www.shorthandexam.in/api/storage/folder/${folderId}`, {
         withCredentials: true
       });
       showSnackbar('Folder deleted successfully', 'success');
@@ -403,7 +403,7 @@ const Storage = () => {
 
     try {
       for (const fileId of selectedFileIds) {
-        await axios.delete(`http://localhost:3001/api/storage/file/${fileId}`, {
+        await axios.delete(`https://www.shorthandexam.in/api/storage/file/${fileId}`, {
           withCredentials: true
         });
       }
