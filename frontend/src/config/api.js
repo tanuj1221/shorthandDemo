@@ -1,5 +1,5 @@
 // API Configuration
-const API_URL = import.meta.env.VITE_API_URL || 'https://www.shorthandexam.in';
+const API_URL = import.meta.env.VITE_API_URL || 'http://dev.shorthandexam.in';
 
 export const API_ENDPOINTS = {
   // Auth

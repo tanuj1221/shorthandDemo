@@ -17,7 +17,7 @@ const Navbar = () => {
     const fetchInstituteDetails = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('https://www.shorthandexam.in/institutedetails', {
+        const response = await fetch('http://dev.shorthandexam.in/institutedetails', {
           method: 'GET',
           credentials: 'include'
         });
@@ -69,7 +69,7 @@ const Navbar = () => {
     setError(null);
 
     try {
-      const response = await fetch('https://www.shorthandexam.in/logoutinsti', {
+      const response = await fetch('http://dev.shorthandexam.in/logoutinsti', {
         method: 'POST',
         credentials: 'include',
         headers: {

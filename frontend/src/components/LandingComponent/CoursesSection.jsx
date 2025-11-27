@@ -21,7 +21,7 @@ const CoursesSection = () => {
       students: '250+',
       rating: 4.9,
       color: 'indigo',
-      icon: '🇬🇧'
+      icon: '📝'
     },
     {
       title: 'Marathi Shorthand',
@@ -35,7 +35,7 @@ const CoursesSection = () => {
       students: '180+',
       rating: 4.8,
       color: 'purple',
-      icon: '🇮🇳'
+      icon: '✍️'
     },
     {
       title: 'Hindi Shorthand',
@@ -49,7 +49,7 @@ const CoursesSection = () => {
       students: '150+',
       rating: 4.9,
       color: 'pink',
-      icon: '🇮🇳'
+      icon: '✏️'
     }
   ];
 
