@@ -264,7 +264,7 @@ exports.registerStudent = async (req, res) => {
 
     // Get the maximum student_id for this year-batch combination
     // No upper limit - can grow beyond 9999 (e.g., 2410001, 2410002... 24110000, 24110001...)
-    const minId = parseInt(`${prefix}0000`);
+    const minId = parseInt(`${prefix}0001`); // Start from 0001, not 0000
     const nextPrefix = parseInt(prefix) + 1;
     const maxId = parseInt(`${nextPrefix}0000`);
     
@@ -291,9 +291,9 @@ exports.registerStudent = async (req, res) => {
       // If by any chance the ID exists, find the next available one
       const [maxCheck] = await conn.query(
         "SELECT MAX(student_id) as maxId FROM student14 WHERE student_id >= ? AND student_id < ?",
-        [minId, maxId]
+        [parseInt(`${prefix}0001`), maxId]
       );
-      nextStudentId = (maxCheck[0].maxId || (minId - 1)) + 1;
+      nextStudentId = (maxCheck[0].maxId || (parseInt(`${prefix}0001`) - 1)) + 1;
       console.log("New student_id after conflict check:", nextStudentId);
     }
 
