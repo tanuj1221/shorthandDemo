@@ -16,7 +16,7 @@ export default function AdminNavbar() {
     setError(null);
 
     try {
-      const response = await fetch('http://dev.shorthandexam.in/logoutinsti', {
+      const response = await fetch('https://dev.shorthandexam.in/logoutinsti', {
         method: 'POST',
         credentials: 'include',
         headers: {

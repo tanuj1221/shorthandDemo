@@ -29,7 +29,7 @@ import {
 } from '@mui/icons-material';
 
 const DownloadClient = () => {
-  const downloadClientUrl = 'http://dev.shorthandexam.in/storage/exe/Shorthand%20Demo%20Nov%2025.exe';
+  const downloadClientUrl = 'https://dev.shorthandexam.in/storage/exe/Shorthand%20Demo%20Nov%2025.exe';
   const rustDeskUrl = 'https://github.com/rustdesk/rustdesk/releases/download/1.4.4/rustdesk-1.4.4-x86_64.exe';
   const anyDeskUrl = 'https://download.anydesk.com/AnyDesk.exe';
   const ultraViewerUrl = 'https://www.ultraviewer.net/en/download.html';

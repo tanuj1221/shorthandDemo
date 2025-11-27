@@ -233,7 +233,7 @@ const StudentRegistrationForm = () => {
       submitButton.textContent = 'Registering...';
     }
 
-    const response = await axios.post('http://dev.shorthandexam.in/registerstudent', submissionData, {
+    const response = await axios.post('https://dev.shorthandexam.in/registerstudent', submissionData, {
       withCredentials: true,
       timeout: 120000, // 2 minute timeout
     });

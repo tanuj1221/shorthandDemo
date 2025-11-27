@@ -35,7 +35,7 @@ import qrImg from '../../images/qr.jpg';
 // API function for hybrid payment
 const processHybridPayment = async (paymentData) => {
   try {
-    const response = await fetch('http://dev.shorthandexam.in/hybridpayment', {
+    const response = await fetch('https://dev.shorthandexam.in/hybridpayment', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ export const HybridPaymentModal = ({
       
       // Updated API endpoint
       const response = await axios.get(
-        'http://dev.shorthandexam.in/institute-points2',
+        'https://dev.shorthandexam.in/institute-points2',
         { withCredentials: true }
       );
       

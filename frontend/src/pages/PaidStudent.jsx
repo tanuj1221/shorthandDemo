@@ -16,7 +16,7 @@ export default function PaidStudentsTable() {
     const fetchPaidStudents = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://dev.shorthandexam.in/paid-students', {
+        const response = await axios.get('https://dev.shorthandexam.in/paid-students', {
           params: {
             page: currentPage,
             pageSize: pageSize

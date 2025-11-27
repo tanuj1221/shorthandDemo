@@ -19,7 +19,7 @@ const NoticeManagement = () => {
 
   const fetchNotices = async () => {
     try {
-      const response = await axios.get('http://dev.shorthandexam.in/api/admin/notices');
+      const response = await axios.get('https://dev.shorthandexam.in/api/admin/notices');
       if (response.data.success) {
         setNotices(response.data.notices);
       }
@@ -34,10 +34,10 @@ const NoticeManagement = () => {
     
     try {
       if (editingNotice) {
-        await axios.put(`http://dev.shorthandexam.in/api/admin/notices/${editingNotice.id}`, formData);
+        await axios.put(`https://dev.shorthandexam.in/api/admin/notices/${editingNotice.id}`, formData);
         alert('Notice updated successfully');
       } else {
-        await axios.post('http://dev.shorthandexam.in/api/admin/notices', formData);
+        await axios.post('https://dev.shorthandexam.in/api/admin/notices', formData);
         alert('Notice created successfully');
       }
       
@@ -66,7 +66,7 @@ const NoticeManagement = () => {
     if (!window.confirm('Are you sure you want to delete this notice?')) return;
     
     try {
-      await axios.delete(`http://dev.shorthandexam.in/api/admin/notices/${id}`);
+      await axios.delete(`https://dev.shorthandexam.in/api/admin/notices/${id}`);
       alert('Notice deleted successfully');
       fetchNotices();
     } catch (error) {
@@ -77,7 +77,7 @@ const NoticeManagement = () => {
 
   const toggleActive = async (notice) => {
     try {
-      await axios.put(`http://dev.shorthandexam.in/api/admin/notices/${notice.id}`, {
+      await axios.put(`https://dev.shorthandexam.in/api/admin/notices/${notice.id}`, {
         ...notice,
         is_active: notice.is_active ? 0 : 1
       });

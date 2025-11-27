@@ -24,7 +24,7 @@ const LoginOverlay = ({ onClose, onLoginSuccess }) => {
     setError('');
 
     try {
-      const response = await axios.post('http://dev.shorthandexam.in/login_institute', {
+      const response = await axios.post('https://dev.shorthandexam.in/login_institute', {
         userId: formData.userId,
         password: formData.password
       }, {
