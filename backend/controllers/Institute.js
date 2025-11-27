@@ -319,25 +319,56 @@ exports.registerStudent = async (req, res) => {
     const generatedPassword = Math.floor(1000 + Math.random() * 9000).toString();
     console.log("Generated password:", generatedPassword);
 
+    // For multiple subjects, we need to find a continuous range of available IDs
+    const numSubjects = courseIds.length;
     const insertedStudentIds = [];
     
-    // Use batch insert for better performance
-    if (courseIds.length === 1) {
-      // Single insert - fast path
-      const insertQuery =
-        "INSERT INTO student14 (student_id, password, instituteId, firstName, lastName, motherName, middleName, subjectsId, batchNo, courseId, batch_year, sem, batchStartDate, batchEndDate, amount, loggedIn, rem_time, done, image, mobile_no, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    // Get all existing IDs in the current batch range to find gaps
+    const [existingIds] = await conn.query(
+      "SELECT student_id FROM student14 WHERE student_id >= ? AND student_id < ? ORDER BY student_id",
+      [parseInt(`${prefix}0001`), maxId]
+    );
+    
+    const existingIdSet = new Set(existingIds.map(row => row.student_id));
+    console.log(`Found ${existingIdSet.size} existing IDs in batch ${prefix}`);
+    
+    // Find continuous range of available IDs
+    let currentId = nextStudentId;
+    let foundIds = [];
+    
+    while (foundIds.length < numSubjects) {
+      if (!existingIdSet.has(currentId)) {
+        foundIds.push(currentId);
+      }
+      currentId++;
       
-      const values = [
-        nextStudentId,
+      // Safety check: don't go beyond reasonable limits
+      if (currentId > maxId - 1) {
+        throw new Error(`Cannot find ${numSubjects} available IDs in batch ${prefix}`);
+      }
+    }
+    
+    console.log(`Allocated IDs for ${numSubjects} subjects:`, foundIds);
+    
+    // Use batch insert for better performance
+    const insertQuery =
+      "INSERT INTO student14 (student_id, password, instituteId, firstName, lastName, motherName, middleName, subjectsId, batchNo, courseId, batch_year, sem, batchStartDate, batchEndDate, amount, loggedIn, rem_time, done, image, mobile_no, email) VALUES ?";
+    
+    const allValues = courseIds.map((courseId, i) => {
+      const currentStudentId = foundIds[i];
+      insertedStudentIds.push(currentStudentId);
+      
+      return [
+        currentStudentId,
         generatedPassword,
         instituteId,
         firstName,
         lastName,
         motherName,
         middleName,
-        JSON.stringify([courseIds[0]]),
+        JSON.stringify([courseId]),
         sem || null,
-        JSON.stringify([courseIds[0]]),
+        JSON.stringify([courseId]),
         batch_year || null,
         sem || null,
         batchStartDate || null,
@@ -350,46 +381,10 @@ exports.registerStudent = async (req, res) => {
         mobile_no || null,
         email,
       ];
+    });
 
-      await conn.query(insertQuery, values);
-      insertedStudentIds.push(nextStudentId);
-    } else {
-      // Multiple inserts - use batch
-      const insertQuery =
-        "INSERT INTO student14 (student_id, password, instituteId, firstName, lastName, motherName, middleName, subjectsId, batchNo, courseId, batch_year, sem, batchStartDate, batchEndDate, amount, loggedIn, rem_time, done, image, mobile_no, email) VALUES ?";
-      
-      const allValues = courseIds.map((courseId, i) => {
-        const currentStudentId = nextStudentId + i;
-        insertedStudentIds.push(currentStudentId);
-        
-        return [
-          currentStudentId,
-          generatedPassword,
-          instituteId,
-          firstName,
-          lastName,
-          motherName,
-          middleName,
-          JSON.stringify([courseId]),
-          sem || null,
-          JSON.stringify([courseId]),
-          batch_year || null,
-          sem || null,
-          batchStartDate || null,
-          batchEndDate || null,
-          "pending",
-          loggedIn || "no",
-          remTime || "300",
-          done || "no",
-          image || null,
-          mobile_no || null,
-          email,
-        ];
-      });
-
-      console.log(`Batch inserting ${courseIds.length} student entries`);
-      await conn.query(insertQuery, [allValues]);
-    }
+    console.log(`Batch inserting ${courseIds.length} student entries`);
+    await conn.query(insertQuery, [allValues]);
 
     await conn.commit();
     console.log("Student registered successfully with IDs:", insertedStudentIds);
