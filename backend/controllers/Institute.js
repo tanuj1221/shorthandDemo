@@ -323,7 +323,7 @@ exports.registerStudent = async (req, res) => {
     const numSubjects = courseIds.length;
     const insertedStudentIds = [];
     
-    // Get all existing IDs in the current batch range to find gaps
+    // Get all existing IDs in the current batch range
     const [existingIds] = await conn.query(
       "SELECT student_id FROM student14 WHERE student_id >= ? AND student_id < ? ORDER BY student_id",
       [parseInt(`${prefix}0001`), maxId]
@@ -331,9 +331,21 @@ exports.registerStudent = async (req, res) => {
     
     const existingIdSet = new Set(existingIds.map(row => row.student_id));
     console.log(`Found ${existingIdSet.size} existing IDs in batch ${prefix}`);
+    console.log(`Existing IDs:`, Array.from(existingIdSet).sort((a, b) => a - b));
     
-    // Find continuous range of available IDs
-    let currentId = nextStudentId;
+    // Find the actual next available ID by checking what exists
+    let startId = parseInt(`${prefix}0001`);
+    if (existingIdSet.size > 0) {
+      // Find the maximum existing ID and start from there
+      const maxExistingId = Math.max(...Array.from(existingIdSet));
+      startId = maxExistingId + 1;
+      console.log(`Max existing ID: ${maxExistingId}, starting search from: ${startId}`);
+    } else {
+      console.log(`No existing IDs, starting from: ${startId}`);
+    }
+    
+    // Find available IDs (they might not be continuous if there are gaps)
+    let currentId = startId;
     let foundIds = [];
     
     while (foundIds.length < numSubjects) {
