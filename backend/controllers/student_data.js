@@ -13,22 +13,22 @@ exports.loginStudent = async (req, res) => {
   const query1 = 'SELECT * FROM student14 WHERE student_id = ?';
 
   try {
-      const [results] = await connection.query(query1, [userId]);
-      if (results.length > 0) {
-          const student = results[0];
+    const [results] = await connection.query(query1, [userId]);
+    if (results.length > 0) {
+      const student = results[0];
 
-          if (student.password === password) {
-              // Set student session
-              req.session.studentId = student.student_id;
-              res.send('Logged in successfully as a student!');
-          } else {
-              res.status(401).send('Invalid credentials for student');
-          }
+      if (student.password === password) {
+        // Set student session
+        req.session.studentId = student.student_id;
+        res.send('Logged in successfully as a student!');
       } else {
-          res.status(404).send('Student not found');
+        res.status(401).send('Invalid credentials for student');
       }
+    } else {
+      res.status(404).send('Student not found');
+    }
   } catch (err) {
-      res.status(500).send(err.message);
+    res.status(500).send(err.message);
   }
 };
 
@@ -36,80 +36,80 @@ exports.logoutStudent = async (req, res) => {
   // Checking if the student session exists
   console.log('logged out')
   if (req.session.studentId) {
-      const studentId = req.session.studentId;
-      
-      // Mark student as logged out in database
-      try {
-          const updateQuery = 'UPDATE student14 SET is_logged_in = 0 WHERE student_id = ?';
-          await connection.query(updateQuery, [studentId]);
-      } catch (err) {
-          console.error('Error updating logout status:', err);
-      }
-      
-      // Destroy the session
-      req.session.destroy(err => {
-          if (err) {
-              // Error occurred during session destroy
-              res.status(500).send("Failed to log out, please try again.");
-          } else {
-              // Optionally clear the client-side cookie if it's not set to auto-clear
-              res.clearCookie('connect.sid');  // Adjust the cookie name according to your settings
+    const studentId = req.session.studentId;
 
-              // Send a successful logout message
-              res.send("Logged out successfully.");
-          }
-      });
+    // Mark student as logged out in database
+    try {
+      const updateQuery = 'UPDATE student14 SET is_logged_in = 0 WHERE student_id = ?';
+      await connection.query(updateQuery, [studentId]);
+    } catch (err) {
+      console.error('Error updating logout status:', err);
+    }
+
+    // Destroy the session
+    req.session.destroy(err => {
+      if (err) {
+        // Error occurred during session destroy
+        res.status(500).send("Failed to log out, please try again.");
+      } else {
+        // Optionally clear the client-side cookie if it's not set to auto-clear
+        res.clearCookie('connect.sid');  // Adjust the cookie name according to your settings
+
+        // Send a successful logout message
+        res.send("Logged out successfully.");
+      }
+    });
   } else {
-      // If there is no session, indicating the user was not logged in
-      res.status(400).send("No active session to log out from.");
+    // If there is no session, indicating the user was not logged in
+    res.status(400).send("No active session to log out from.");
   }
 };
 
 
 exports.changePassword = async (req, res) => {
-    const { newPassword } = req.body;
-    const userId = req.session.studentId; // Assuming userId is stored in the session
-  
-    // Update password in the database
-    const updateQuery = 'UPDATE student14 SET password = ? WHERE student_id = ?';
-  
-    await connection.query(updateQuery, [newPassword, userId], (err, result) => {
-      if (err) {
-        console.error('Error updating password:', err);
-        res.status(500).send('Error updating password');
-      } else {
-        console.log('Password updated successfully');
-        res.send('Password updated successfully');
-      }
-    });
-  };
+  const { newPassword } = req.body;
+  const userId = req.session.studentId; // Assuming userId is stored in the session
 
+  // Update password in the database
+  const updateQuery = 'UPDATE student14 SET password = ? WHERE student_id = ?';
 
-
-
-
-
-
-  // getting the student data 
-  exports.getstudentData = async (req, res) => {
-    try {
-      const userId = req.session.studentId;
-      const selectQuery = 'SELECT * FROM student14 WHERE student_id = ?';
-      // Use promise-based query execution
-      const [rows, fields] = await connection.query(selectQuery, [userId]);
-      console.log([rows, fields])
-      if (rows.length > 0) {
-        const studentData = rows[0];
-        res.json(studentData);
-      } else {
-        res.status(404).send('Student not found');
-      }
-    } catch (err) {
-      console.log('Error fetching user data:', err);
-      res.status(500).send(err);
+  await connection.query(updateQuery, [newPassword, userId], (err, result) => {
+    if (err) {
+      console.error('Error updating password:', err);
+      res.status(500).send('Error updating password');
+    } else {
+      console.log('Password updated successfully');
+      res.send('Password updated successfully');
     }
-  };
-  
+  });
+};
+
+
+
+
+
+
+
+// getting the student data 
+exports.getstudentData = async (req, res) => {
+  try {
+    const userId = req.session.studentId;
+    const selectQuery = 'SELECT * FROM student14 WHERE student_id = ?';
+    // Use promise-based query execution
+    const [rows, fields] = await connection.query(selectQuery, [userId]);
+    console.log([rows, fields])
+    if (rows.length > 0) {
+      const studentData = rows[0];
+      res.json(studentData);
+    } else {
+      res.status(404).send('Student not found');
+    }
+  } catch (err) {
+    console.log('Error fetching user data:', err);
+    res.status(500).send(err);
+  }
+};
+
 
 exports.getStudentSubjects = async (req, res) => {
   try {
@@ -142,7 +142,7 @@ exports.getStudentSubjects = async (req, res) => {
     res.status(500).send(err.message);
   }
 }
- 
+
 exports.getStudentSubjects12 = async (req, res) => {
   try {
     const userId = req.session.studentId;
@@ -309,7 +309,7 @@ exports.saveData = async (req, res) => {
   } finally {
     console.log('completed')
   }
-};   
+};
 exports.downloadExcel = async (req, res) => {
   try {
     const [rows] = await connection.query('SELECT * FROM savedata');
@@ -353,5 +353,105 @@ exports.downloadExcel = async (req, res) => {
   } catch (err) {
     console.error('Error downloading CSV:', err);
     res.status(500).send(err.message);
+  }
+};
+
+exports.getDemoExamData = async (req, res) => {
+  try {
+    const { subjectId } = req.body;
+    console.log('=== FETCHING DEMO EXAM DATA ===');
+    console.log('SubjectId:', subjectId);
+
+    if (!subjectId) {
+      console.log('ERROR: Subject ID is required');
+      return res.status(400).send('Subject ID is required');
+    }
+
+    // First, get the Passage_Timer from subjectsDb
+    const timerQuery = 'SELECT Passage_Timer FROM subjectsDb WHERE subjectId = ?';
+    console.log('Fetching timer from subjectsDb for subjectId:', subjectId);
+    const [timerResult] = await connection.query(timerQuery, [subjectId]);
+    
+    let passageTimer = 300; // Default 5 minutes in seconds
+    if (timerResult.length > 0 && timerResult[0].Passage_Timer) {
+      passageTimer = timerResult[0].Passage_Timer * 60; // Convert minutes to seconds
+      console.log(`Passage_Timer found: ${timerResult[0].Passage_Timer} minutes = ${passageTimer} seconds`);
+    } else {
+      console.log('No timer found in subjectsDb, using default:', passageTimer, 'seconds');
+    }
+
+    const query = 'SELECT * FROM audiodb1 WHERE subjectId = ?';
+    console.log('Executing query:', query, 'with subjectId:', subjectId);
+    const [rows] = await connection.query(query, [subjectId]);
+    console.log('Total audio passages found:', rows.length);
+
+    if (rows.length === 0) {
+      console.log('No audio passages found for subject:', subjectId);
+      return res.status(404).send('No audio passages found for this subject');
+    }
+
+    // Filter for 'A' passages (case-insensitive check)
+    const passagesA = rows.filter(row =>
+      row.passageCode &&
+      row.passageCode.trim().toUpperCase().endsWith('A')
+    );
+    console.log('Passages with "A" suffix found:', passagesA.length);
+
+    if (passagesA.length === 0) {
+      console.log('No "A" series passages found');
+      return res.status(404).send('No "A" series audio passages found');
+    }
+
+    // Pick a random 'A' passage
+    const randomA = passagesA[Math.floor(Math.random() * passagesA.length)];
+    console.log('Selected random A passage:', randomA.passageCode);
+
+    // Determine corresponding 'B' passage code
+    // Assuming code is something like "501A", we want "501B"
+    const baseCode = randomA.passageCode.trim().slice(0, -1);
+    const targetCodeB = baseCode + 'B';
+    console.log('Looking for corresponding B passage:', targetCodeB);
+
+    // Find the 'B' passage in the fetched rows
+    const passageB = rows.find(row =>
+      row.passageCode &&
+      row.passageCode.trim().toUpperCase() === targetCodeB.toUpperCase()
+    );
+
+    if (!passageB) {
+      console.log('ERROR: B passage not found for:', targetCodeB);
+      return res.status(404).send(`Corresponding 'B' passage (${targetCodeB}) not found for ${randomA.passageCode}`);
+    }
+    console.log('Found B passage:', passageB.passageCode);
+
+    // Construct the response
+    const responseData = {
+      examId: `DEMO_${baseCode}`,
+      passage1: {
+        code: randomA.passageCode,
+        audioUrl: randomA.links,
+        text: randomA.answer,
+        length: passageTimer.toString() // Timer from subjectsDb in seconds
+      },
+      passage2: {
+        code: passageB.passageCode,
+        audioUrl: passageB.links,
+        text: passageB.answer,
+        length: passageTimer.toString() // Timer from subjectsDb in seconds
+      }
+    };
+
+    console.log('=== RESPONSE DATA ===');
+    console.log('Exam ID:', responseData.examId);
+    console.log('Passage Timer:', passageTimer, 'seconds');
+    console.log('Passage 1:', responseData.passage1.code, '| URL:', responseData.passage1.audioUrl);
+    console.log('Passage 2:', responseData.passage2.code, '| URL:', responseData.passage2.audioUrl);
+    console.log('=====================');
+
+    res.json(responseData);
+
+  } catch (err) {
+    console.error('Error in getDemoExamData:', err);
+    res.status(500).send('Internal Server Error: ' + err.message);
   }
 };

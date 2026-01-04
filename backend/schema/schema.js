@@ -6,7 +6,7 @@ const schemas = {
   },
   audio_checking: {
     id: 'int unsigned',
-    subjectId: 'int referenced {subjectsdb.subjectId}',
+    subjectId: 'int referenced {subjectsDb.subjectId}',
     passageCode: 'varchar(50)',
     answer: 'text',
     links: 'text',
@@ -14,7 +14,7 @@ const schemas = {
     updated_at: 'timestamp'
   },
   audiodb1: {
-    subjectId: 'int referenced {subjectsdb.subjectId}',
+    subjectId: 'int referenced {subjectsDb.subjectId}',
     audio_name: 'text',
     links: 'text',
     length: 'varchar(20)',
@@ -62,7 +62,7 @@ const schemas = {
     points: 'bigint'
   },
   mockdb: {
-    subjectId: 'int referenced {subjectsdb.subjectId}',
+    subjectId: 'int referenced {subjectsDb.subjectId}',
     examid: 'varchar(50)',
     passagecode1: 'varchar(50)',
     passagecode2: 'varchar(50)',
@@ -83,7 +83,7 @@ const schemas = {
     original: 'text',
     list: 'text',
     instituteId: 'int referenced {instituted.instituteId}',
-    subjectId: 'int referenced {subjectsdb.subjectId}',
+    subjectId: 'int referenced {subjectsDb.subjectId}',
     created_at: 'timestamp'
   },
   student: {
@@ -149,7 +149,7 @@ const schemas = {
     sem: 'text',
     image: 'text'
   },
-  subjectsdb: {
+  subjectsDb: {
     subjectId: 'int',
     coursed: 'int referenced {coursesDb1.coursed}',
     subject_name: 'text',
@@ -158,8 +158,8 @@ const schemas = {
     Passage_Timer: 'time',
     Demo_Timer: 'time'
   },
-  subjectsdb_new: {
-    subjectId: 'int referenced {subjectsdb.subjectId}',
+  subjectsDb_new: {
+    subjectId: 'int referenced {subjectsDb.subjectId}',
     audio_name: 'text',
     links: 'text',
     length: 'varchar(20)',

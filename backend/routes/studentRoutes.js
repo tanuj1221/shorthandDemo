@@ -6,18 +6,20 @@ const studentController = require('../controllers/student_data');
 
 // Route to handle password change
 router.post('/change-password', isAuthenticated, studentController.changePassword);
-router.get('/studentdata',isAuthenticated,studentController.getstudentData);
+router.get('/studentdata', isAuthenticated, studentController.getstudentData);
 router.get('/getsubjects', isAuthenticated, studentController.getStudentSubjects);
 router.post('/change-password', isAuthenticated, studentController.changePassword);
 router.post('/updateTimerEndpoint', isAuthenticated, studentController.updateTimer);
 router.get('/subinfo', isAuthenticated, studentController.getStudentSubjectInfo);
 router.post('/logout', isAuthenticated, studentController.logoutStudent);
-router.post('/save-data',studentController.saveData)
+router.post('/save-data', studentController.saveData)
 router.get('/subinfo1', isAuthenticated, studentController.getStudentSubjects12);
-router.get('/subinforeal',  studentController.getStudentSubjectInfo12);
-router.get('/updatetime',  studentController.updateRemTime);
+router.get('/subinforeal', studentController.getStudentSubjectInfo12);
+router.get('/updatetime', studentController.updateRemTime);
+
 
 router.post('/download', studentController.downloadExcel);
+router.post('/demo-exam', studentController.getDemoExamData);
 
-module.exports = router;  
+module.exports = router;
 
