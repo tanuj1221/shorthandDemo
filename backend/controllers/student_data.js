@@ -1,5 +1,6 @@
 // controllers/authController.js
 const connection = require('../config/db1');
+const crypto = require('crypto');
 
 const xl = require('excel4node');
 const fs = require('fs');
@@ -9,25 +10,52 @@ const path = require('path');
 exports.loginStudent = async (req, res) => {
   console.log("Trying student login");
   const { userId, password } = req.body;
+  console.log("Login attempt - userId:", userId, "password length:", password?.length);
 
   const query1 = 'SELECT * FROM student14 WHERE student_id = ?';
 
   try {
     const [results] = await connection.query(query1, [userId]);
+    console.log("Query results count:", results.length);
+    
     if (results.length > 0) {
       const student = results[0];
+      console.log("Student found:", student.student_id);
+      console.log("Password match:", student.password === password);
+      console.log("DB password length:", student.password?.length, "Input password length:", password?.length);
 
       if (student.password === password) {
+        // Generate unique session ID
+        const sessionId = crypto.randomBytes(32).toString('hex');
+        const now = new Date();
+
+        // Invalidate any previous sessions and set new session
+        const updateQuery = `UPDATE student14 
+          SET session_id = ?, last_heartbeat = ?, is_logged_in = 1 
+          WHERE student_id = ?`;
+        await connection.query(updateQuery, [sessionId, now, student.student_id]);
+
         // Set student session
         req.session.studentId = student.student_id;
-        res.send('Logged in successfully as a student!');
+        req.session.sessionId = sessionId;
+        
+        console.log("Login successful, session created:", sessionId.substring(0, 10) + "...");
+        
+        res.json({ 
+          message: 'Logged in successfully as a student!',
+          sessionId: sessionId,
+          studentId: student.student_id
+        });
       } else {
+        console.log("Password mismatch!");
         res.status(401).send('Invalid credentials for student');
       }
     } else {
+      console.log("Student not found with userId:", userId);
       res.status(404).send('Student not found');
     }
   } catch (err) {
+    console.error("Login error:", err);
     res.status(500).send(err.message);
   }
 };
@@ -38,9 +66,11 @@ exports.logoutStudent = async (req, res) => {
   if (req.session.studentId) {
     const studentId = req.session.studentId;
 
-    // Mark student as logged out in database
+    // Mark student as logged out in database and clear session
     try {
-      const updateQuery = 'UPDATE student14 SET is_logged_in = 0 WHERE student_id = ?';
+      const updateQuery = `UPDATE student14 
+        SET is_logged_in = 0, session_id = NULL, last_heartbeat = NULL 
+        WHERE student_id = ?`;
       await connection.query(updateQuery, [studentId]);
     } catch (err) {
       console.error('Error updating logout status:', err);
@@ -453,5 +483,59 @@ exports.getDemoExamData = async (req, res) => {
   } catch (err) {
     console.error('Error in getDemoExamData:', err);
     res.status(500).send('Internal Server Error: ' + err.message);
+  }
+};
+
+// Heartbeat endpoint to check session validity
+exports.checkSession = async (req, res) => {
+  try {
+    const studentId = req.session.studentId;
+    const sessionId = req.session.sessionId;
+
+    if (!studentId || !sessionId) {
+      return res.status(401).json({ 
+        valid: false, 
+        message: 'No active session' 
+      });
+    }
+
+    // Check if session is still valid in database
+    const query = 'SELECT session_id, last_heartbeat FROM student14 WHERE student_id = ?';
+    const [results] = await connection.query(query, [studentId]);
+
+    if (results.length === 0) {
+      return res.status(401).json({ 
+        valid: false, 
+        message: 'Student not found' 
+      });
+    }
+
+    const student = results[0];
+
+    // Check if session_id matches
+    if (student.session_id !== sessionId) {
+      return res.status(401).json({ 
+        valid: false, 
+        message: 'Session revoked - logged in elsewhere',
+        forceLogout: true
+      });
+    }
+
+    // Update last_heartbeat timestamp
+    const now = new Date();
+    const updateQuery = 'UPDATE student14 SET last_heartbeat = ? WHERE student_id = ?';
+    await connection.query(updateQuery, [now, studentId]);
+
+    res.json({ 
+      valid: true, 
+      message: 'Session active' 
+    });
+
+  } catch (err) {
+    console.error('Error in checkSession:', err);
+    res.status(500).json({ 
+      valid: false, 
+      message: 'Internal server error' 
+    });
   }
 };
