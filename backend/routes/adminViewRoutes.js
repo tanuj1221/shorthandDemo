@@ -40,10 +40,10 @@ router.get('/update', adminView.handleStudentUpdate);
 router.put('/update', adminView.handleStudentUpdate);
 
 // Audio routes
-router.get('/audio', adminView.getAudioSubmissions);
-router.post('/audio/approve', adminView.approveAudioSubmission);
-router.post('/audio/reject', adminView.rejectAudioSubmission);
-router.post('/audio/delete', adminView.deleteAudioSubmission);
+router.get('/audio', isAuthenticatedAdmin, adminView.getAudioSubmissions);
+router.post('/audio/approve', isAuthenticatedAdmin, adminView.approveAudioSubmission);
+router.post('/audio/reject', isAuthenticatedAdmin, adminView.rejectAudioSubmission);
+router.post('/audio/delete', isAuthenticatedAdmin, adminView.deleteAudioSubmission);
 
 
 // Excel upload route

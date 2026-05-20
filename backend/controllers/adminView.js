@@ -1089,51 +1089,62 @@ exports.approveAudioSubmission = async (req, res) => {
 exports.rejectAudioSubmission = async (req, res) => {
   const { id, remark } = req.body;
 
+  const conn = await pool.getConnection();
   try {
-    console.log(`[REJECT] Starting rejection for submission ${id}`); // 1. Log entry
-    console.log(`[REJECT] Request data:`, { id, remark }); // 2. Log input
+    console.log(`[REJECT] Starting rejection for submission ${id}`);
 
-    const query = `
-      UPDATE audio_checking 
-      SET status = 'rejected', 
-          remark = ?, 
-          approved_by = 0, 
-          updated_at = CURRENT_TIMESTAMP 
-      WHERE id = ?
-    `;
-    console.log(`[REJECT] Executing query:`, query); // 3. Log raw SQL
-    console.log(`[REJECT] Query params:`, [remark, id]); // 4. Log parameters
+    await conn.beginTransaction();
 
-    const [result] = await connection.query(query, [remark, id]);
-    console.log(`[REJECT] Query result:`, result); // 5. Log result
+    // 1. Get current status and instituteId before updating
+    const [current] = await conn.query(
+      'SELECT status, instituteId FROM audio_checking WHERE id=?',
+      [id]
+    );
 
-    if (result.affectedRows === 0) {
-      console.log(`[REJECT] No rows affected - submission ${id} not found`);
-      return res.status(404).json({
-        success: false,
-        message: 'Submission not found'
-      });
+    if (!current.length) {
+      await conn.rollback();
+      return res.status(404).json({ success: false, message: 'Submission not found' });
     }
 
-    console.log(`[REJECT] Successfully rejected submission ${id}`);
+    const wasApproved = current[0].status === 'approved';
+    const instituteId = current[0].instituteId;
+    console.log(`[REJECT] Current status: ${current[0].status}, instituteId: ${instituteId}`);
+
+    // 2. Update submission to rejected
+    await conn.query(
+      `UPDATE audio_checking
+       SET status = 'rejected', remark = ?, approved_by = 0, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [remark, id]
+    );
+
+    // 3. Deduct points ONLY if it was previously approved
+    if (wasApproved) {
+      await conn.query(
+        'UPDATE institutedb SET points = GREATEST(COALESCE(points, 0) - 200, 0) WHERE instituteId=?',
+        [instituteId]
+      );
+      console.log(`[REJECT] Deducted 200 points from institute ${instituteId}`);
+    }
+
+    await conn.commit();
+
     res.json({
       success: true,
-      message: 'Rejected (approved_by set to 0)',
-      rejected_id: id
+      message: wasApproved ? 'Rejected and 200 points deducted' : 'Rejected',
+      points_deducted: wasApproved ? 200 : 0
     });
 
   } catch (err) {
-    console.error(`[REJECT] 🚨 FULL ERROR FOR SUBMISSION ${id}:`, {
-      message: err.message,
-      sqlMessage: err.sqlMessage,
-      sql: err.sql,
-      stack: err.stack
-    });
+    await conn.rollback();
+    console.error(`[REJECT] 🚨 ERROR:`, { message: err.message, sql: err.sql });
     res.status(500).json({
       success: false,
       message: 'Server error during rejection',
-      debug: process.env.NODE_ENV === 'development' ? err.message : null // Hide in prod
+      debug: process.env.NODE_ENV === 'development' ? err.message : null
     });
+  } finally {
+    conn.release();
   }
 };
 

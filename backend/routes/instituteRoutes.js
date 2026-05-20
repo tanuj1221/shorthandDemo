@@ -15,7 +15,7 @@ router.get('/getstudents', isAuthenticatedInsti, instituteController.getstudents
 router.get('/paystudents', isAuthenticatedInsti, instituteController.getPendingAmountStudentsList);
 router.get('/download-students-excel', isAuthenticatedInsti, instituteController.downloadStudentsExcel);
 router.get('/student-payments-status', instituteController.getStudentPaymentsStatus);
-router.post('/submit-audio', upload.single('audioFile'), instituteController.submitAudio);
+router.post('/submit-audio', isAuthenticatedInsti, upload.single('audioFile'), instituteController.submitAudio);
 router.post('/reset-password', isAuthenticatedInsti, instituteController.resetInstitutePassword);
 
 // router.get('/studentsubjects', isAuthenticatedInsti, instituteController.getPendingAmountStudentsList);

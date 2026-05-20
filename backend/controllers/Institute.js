@@ -910,9 +910,7 @@ exports.submitAudio = async (req, res) => {
       });
     }
 
-    // Updated path with /audio subfolder
-    const fileLink = `http://localhost:8080/uploads/audio/${audioFile.filename}`;
-    // const fileLink = `http://45.119.47.81:8080/uploads/audio/${audioFile.filename}`;
+    const fileLink = `/uploads/audio/${audioFile.filename}`;
 
 
     // Database insertion
