@@ -1383,11 +1383,20 @@ export default function DataTable({ tableName }) {
   // };
      
      const exportToExcel = () => {
+  const EXCEL_CELL_LIMIT = 32767;
   try {
-    // Prepare data (remove internal fields)
+    // Prepare data (remove internal fields, truncate long text cells)
     const exportData = tableData.map(row => {
       const { _temp_id, ...cleanRow } = row;
-      return cleanRow;
+      const truncated = {};
+      for (const [key, value] of Object.entries(cleanRow)) {
+        if (typeof value === 'string' && value.length > EXCEL_CELL_LIMIT) {
+          truncated[key] = value.substring(0, EXCEL_CELL_LIMIT);
+        } else {
+          truncated[key] = value;
+        }
+      }
+      return truncated;
     });
 
     if (exportData.length === 0) {

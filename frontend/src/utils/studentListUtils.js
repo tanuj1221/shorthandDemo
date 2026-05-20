@@ -30,7 +30,15 @@ export const downloadPDF = (students) => {
 };
 
 export const downloadExcel = (students) => {
-  const worksheet = XLSX.utils.json_to_sheet(students);
+  const EXCEL_CELL_LIMIT = 32767;
+  const safe = students.map(row => {
+    const out = {};
+    for (const [k, v] of Object.entries(row)) {
+      out[k] = typeof v === 'string' && v.length > EXCEL_CELL_LIMIT ? v.substring(0, EXCEL_CELL_LIMIT) : v;
+    }
+    return out;
+  });
+  const worksheet = XLSX.utils.json_to_sheet(safe);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
   XLSX.writeFile(workbook, "student_list.xlsx");
