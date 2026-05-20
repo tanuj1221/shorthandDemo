@@ -24,6 +24,7 @@ router.delete('/table/:tableName/delete', adminView.deleteTableRecord);
 
 router.post('/save-table/:tableName', adminView.saveTheTable);
 router.get('/paid-students', adminView.getPaidStudents);
+router.get('/paid-students-by-month', adminView.getPaidStudentsByMonth);
 
 
 router.post('/admin_login', adminView.loginadmin);

@@ -493,6 +493,49 @@ exports.saveTheTable = async (req, res) => {
 };
 
 
+exports.getPaidStudentsByMonth = async (req, res) => {
+  const { months } = req.query;
+  // months param: comma-separated list like "2025-06,2025-12"
+  // Defaults to June 2025 and December 2025 if not provided
+  const targetMonths = months
+    ? months.split(',').map(m => m.trim())
+    : ['2025-06', '2025-12'];
+
+  try {
+    const placeholders = targetMonths.map(() => 'DATE_FORMAT(date, \'%Y-%m\') = ?').join(' OR ');
+    const query = `
+      SELECT
+        student_id,
+        user,
+        mobile,
+        email,
+        utr,
+        date,
+        amount
+      FROM qrpay
+      WHERE amount > 0 AND (${placeholders})
+      ORDER BY date DESC
+    `;
+
+    const [students] = await connection.query(query, targetMonths);
+
+    res.status(200).json({
+      success: true,
+      data: students,
+      totalStudents: students.length,
+      months: targetMonths
+    });
+  } catch (error) {
+    console.error('Failed to fetch paid students by month:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load payment data',
+      error: error.message
+    });
+  }
+};
+
+
 exports.getPaidStudents = async (req, res) => {
   // Set up pagination (default: page 1, 10 items per page)
   const page = parseInt(req.query.page) || 1;

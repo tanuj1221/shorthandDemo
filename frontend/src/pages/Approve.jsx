@@ -14,7 +14,7 @@ function Approve() {
       params.append('utr', utrFilter.trim());
     }
     
-    const url = `https://www.shorthandexam.in/approve${params.toString() ? '?' + params.toString() : ''}`;
+    const url = `http://localhost:3001/approve${params.toString() ? '?' + params.toString() : ''}`;
     
     fetch(url)
       .then((res) => res.json())
@@ -34,7 +34,7 @@ function Approve() {
   };
 
   const handleApprove = (studentId) => {
-    fetch('https://www.shorthandexam.in/approved_student', {
+    fetch('http://localhost:3001/approved_student', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ student_id: studentId }),
@@ -57,7 +57,7 @@ function Approve() {
       return;
     }
 
-    fetch('https://www.shorthandexam.in/bulk_approve_students', {
+    fetch('http://localhost:3001/bulk_approve_students', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ student_ids: selectedStudents }),
@@ -75,7 +75,7 @@ function Approve() {
   };
 
   const handleReject = (studentId) => {
-    fetch('https://www.shorthandexam.in/rejected_student', {
+    fetch('http://localhost:3001/rejected_student', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ student_id: studentId }),

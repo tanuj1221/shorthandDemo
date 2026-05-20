@@ -28,7 +28,7 @@ const ContactSection = () => {
     setError('');
 
     try {
-      const response = await axios.post('https://www.shorthandexam.in/api/contact', formData);
+      const response = await axios.post('http://localhost:3001/api/contact', formData);
       
       if (response.data.success) {
         setSuccess(true);

@@ -112,10 +112,10 @@ export const StudentsTable = ({
   const selectableStudents = students; // All students are selectable since none are paid
 
   return (
-    <TableContainer sx={{ 
+    <TableContainer sx={{
       borderRadius: 2,
       border: `1px solid ${theme.palette.divider}`,
-      maxHeight: 'calc(100vh - 300px)',
+      maxHeight: 520,
       overflow: 'auto'
     }}>
       <Table size="small" stickyHeader sx={{ minWidth: 800 }}>
