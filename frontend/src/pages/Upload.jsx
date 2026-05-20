@@ -29,7 +29,7 @@ export default function CSVUploadPage() {
       formData.append("excelFile", file);      // 👈 match backend upload.single('excelFile')
       formData.append("tableName", tableName); // 👈 match backend req.body.tableName
 
-      const res = await fetch("http://localhost:3001/upload/excel", {
+      const res = await fetch("/upload/excel", {
         method: "POST",
         body: formData,
       });

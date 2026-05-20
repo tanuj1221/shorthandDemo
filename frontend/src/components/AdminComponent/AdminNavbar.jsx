@@ -16,7 +16,7 @@ export default function AdminNavbar() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/logoutinsti', {
+      const response = await fetch('/logoutinsti', {
         method: 'POST',
         credentials: 'include',
         headers: {

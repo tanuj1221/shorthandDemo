@@ -13,7 +13,7 @@ const NoticeBoard = () => {
 
   const fetchNotices = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/notices');
+      const response = await axios.get('/api/notices');
       if (response.data.success) {
         setNotices(response.data.notices);
       }

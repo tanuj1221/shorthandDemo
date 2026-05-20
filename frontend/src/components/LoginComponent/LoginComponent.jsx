@@ -30,8 +30,8 @@ function LoginComponent({ setIsAuthenticated, setIsAdminAuthenticated, loginType
 
     try {
       const apiUrl = loginType === 'admin'
-        ? 'http://localhost:3001/admin_login'
-        : 'http://localhost:3001/login_institute';
+        ? '/admin_login'
+        : '/login_institute';
 
       const response = await fetch(apiUrl, {
         method: 'POST',

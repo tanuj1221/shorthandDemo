@@ -24,7 +24,7 @@ const PORT = 3001;
 
 // CORS Configuration - SINGLE configuration only
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://45.119.47.81:8080', 'http://localhost:3000'],
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://45.119.47.81:8080', 'https://www.shorthandexam.in'],
   credentials: true
 }));
 
