@@ -1026,44 +1026,46 @@ exports.approveAudioSubmission = async (req, res) => {
     await conn.beginTransaction();
     console.log('Transaction started');
 
-    // 1. Update submission
+    // 1. Get current status and instituteId before updating
+    const [current] = await conn.query(
+      'SELECT status, instituteId FROM audio_checking WHERE id=?',
+      [id]
+    );
+
+    if (!current.length) {
+      await conn.rollback();
+      console.log('Submission not found');
+      return res.status(404).json({ success: false, message: 'Submission not found' });
+    }
+
+    const wasAlreadyApproved = current[0].status === 'approved';
+    const instituteId = current[0].instituteId;
+    console.log(`Current status: ${current[0].status}, instituteId: ${instituteId}`);
+
+    // 2. Update submission status and remark
     const updateQuery = `UPDATE audio_checking SET status='approved', remark=?, approved_by=1 WHERE id=?`;
     console.log('Executing:', updateQuery, [remark, id]);
 
     const [updateResult] = await conn.query(updateQuery, [remark, id]);
     console.log('Update result:', updateResult);
 
-    if (updateResult.affectedRows === 0) {
-      await conn.rollback();
-      console.log('No rows affected - submission not found');
-      return res.status(404).json({ success: false, message: 'Submission not found' });
+    // 3. Add points ONLY if this is a new approval (not re-approval)
+    if (!wasAlreadyApproved) {
+      const pointsQuery = 'UPDATE institutedb SET points = COALESCE(points, 0) + 200 WHERE instituteId=?';
+      console.log('Executing:', pointsQuery, [instituteId]);
+      await conn.query(pointsQuery, [instituteId]);
+      console.log('Points added: 200');
+    } else {
+      console.log('Already approved — skipping point assignment');
     }
 
-    // 2. Get instituteId
-    const [submission] = await conn.query(
-      'SELECT instituteId FROM audio_checking WHERE id=?',
-      [id]
-    );
-    console.log('Institute ID:', submission[0]?.instituteId);
-
-    if (!submission.length) {
-      await conn.rollback();
-      console.log('Institute not found');
-      return res.status(404).json({ success: false, message: 'Institute not found' });
-    }
-
-    // 3. Add points
-    const pointsQuery = 'UPDATE institutedb SET points=points+200 WHERE instituteId=?';
-    console.log('Executing:', pointsQuery, [submission[0].instituteId]);
-
-    await conn.query(pointsQuery, [submission[0].instituteId]);
     await conn.commit();
 
     console.log('Approval successful');
     res.json({
       success: true,
-      message: 'Approved (approved_by=1)',
-      points_added: 200
+      message: wasAlreadyApproved ? 'Remark updated (already approved)' : 'Approved',
+      points_added: wasAlreadyApproved ? 0 : 200
     });
 
   } catch (err) {

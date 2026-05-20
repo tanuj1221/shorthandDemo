@@ -18,13 +18,21 @@ import { Check, Close } from '@mui/icons-material';
 
 const EvaluationDialog = ({ open, submission, onClose, onSave }) => {
   const [remark, setRemark] = React.useState(submission?.remark || '');
-  const [status, setStatus] = React.useState(submission?.status || 'pending');
+  const [status, setStatus] = React.useState(
+    submission?.status === 'approved' || submission?.status === 'rejected'
+      ? submission.status
+      : 'approved'
+  );
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
     if (submission) {
       setRemark(submission.remark || '');
-      setStatus(submission.status || 'pending');
+      setStatus(
+        submission.status === 'approved' || submission.status === 'rejected'
+          ? submission.status
+          : 'approved'
+      );
     }
   }, [submission]);
 
@@ -68,7 +76,6 @@ const EvaluationDialog = ({ open, submission, onClose, onSave }) => {
             label="Status"
             onChange={(e) => setStatus(e.target.value)}
           >
-            <MenuItem value="pending">Pending</MenuItem>
             <MenuItem value="approved">Approved</MenuItem>
             <MenuItem value="rejected">Rejected</MenuItem>
           </Select>

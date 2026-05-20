@@ -33,19 +33,27 @@ const useAudioSubmissions = () => {
   // Update submission status
   const updateSubmission = async (submission) => {
     try {
-      const endpoint = submission.status === 'approved' ? 'approve' : 'reject';
+      let endpoint;
+      if (submission.status === 'approved') {
+        endpoint = 'approve';
+      } else if (submission.status === 'rejected') {
+        endpoint = 'reject';
+      } else {
+        throw new Error('Invalid status: must be approved or rejected');
+      }
+
       const response = await axios.post(`${BASE_URL}/audio/${endpoint}`, {
         id: submission.id,
         remark: submission.remark
       });
 
       if (response.data) {
-        await fetchSubmissions(); // Refresh the list
+        await fetchSubmissions();
         return { success: true };
       }
     } catch (err) {
       console.error('Error updating submission:', err);
-      throw new Error(err.response?.data?.message || 'Failed to update submission');
+      throw new Error(err.response?.data?.message || err.message || 'Failed to update submission');
     }
   };
 
