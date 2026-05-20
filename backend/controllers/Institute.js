@@ -1550,32 +1550,30 @@ exports.processHybridPayment = async (req, res) => {
       const student = studentResults[0];
       const studentName = `${student.firstName || ''} ${student.lastName || ''}`.trim();
 
-      // Update student record with payment status and batch information - keep as 'waiting'
-      const updateStudentQuery = `UPDATE student14 SET 
-                                 amount = 'waiting',
+      // Points-only payment → auto-approve ('paid'); partial cash → needs admin UTR verify ('waiting')
+      const paymentStatus = totalCashAmount === 0 ? 'paid' : 'waiting';
+      const updateStudentQuery = `UPDATE student14 SET
+                                 amount = ?,
                                  batchStartDate = ?,
                                  batchEndDate = ?
                                  WHERE student_id = ?`;
-      
-      await conn.query(updateStudentQuery, [batchStartDate, batchEndDate, payment.studentId]);
 
-      // Insert QR payment record if cash amount exists
+      await conn.query(updateStudentQuery, [paymentStatus, batchStartDate, batchEndDate, payment.studentId]);
+
+      // Insert payment record: cash payments use UTR, points-only use 'POINTS' as reference
+      const pointsPerStudent = Math.floor(totalPointsUsed / payments.length);
       if (totalCashAmount > 0 && utrNumber) {
-        const insertQrQuery = `INSERT INTO qrpay 
-                              (student_id, user, mobile, email, utr, date, amount) 
-                              VALUES (?, ?, ?, ?, ?, ?, ?)`;
-
-        await conn.query(insertQrQuery, [
-          payment.studentId,
-          studentName,
-          student.mobile_no || '',
-          student.email || '',
-          utrNumber,
-          currentDate,
-          payment.cashAmount.toString()
-        ]);
-
-        console.log(`Added QR payment record for student ${payment.studentId} - Amount: ${payment.cashAmount}`);
+        await conn.query(
+          `INSERT INTO qrpay (student_id, user, mobile, email, utr, date, amount) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [payment.studentId, studentName, student.mobile_no || '', student.email || '', utrNumber, currentDate, payment.cashAmount.toString()]
+        );
+        console.log(`Added cash payment record for student ${payment.studentId} - Amount: ${payment.cashAmount}`);
+      } else if (totalCashAmount === 0 && totalPointsUsed > 0) {
+        await conn.query(
+          `INSERT INTO qrpay (student_id, user, mobile, email, utr, date, amount) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [payment.studentId, studentName, student.mobile_no || '', student.email || '', `POINTS-${pointsPerStudent}`, currentDate, '0']
+        );
+        console.log(`Added points payment record for student ${payment.studentId} - Points: ${pointsPerStudent}`);
       }
     }
 
