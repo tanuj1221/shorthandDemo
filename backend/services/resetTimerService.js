@@ -33,6 +33,43 @@ async function resetStudentTimers() {
 }
 
 /**
+ * Reset every student's timer to a fixed value (in minutes).
+ * Used by the manual "Reset Time to X min" admin actions.
+ * Mirrors the storage format of resetStudentTimers()/updateRemTime (plain minutes).
+ */
+async function setAllStudentTimers(minutes) {
+  // Validate: must be a positive integer number of minutes
+  const value = Number(minutes);
+  if (!Number.isInteger(value) || value <= 0) {
+    const err = new Error('Invalid timer value. Minutes must be a positive integer.');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  console.log(`[TIMER RESET] Setting rem_time = ${value} for all students...`);
+
+  try {
+    const query = 'UPDATE student14 SET rem_time = ?';
+    const [result] = await connection.query(query, [value]);
+
+    console.log('[TIMER RESET] Success!');
+    console.log(`[TIMER RESET] Affected rows: ${result.affectedRows}`);
+    console.log(`[TIMER RESET] Changed rows: ${result.changedRows}`);
+
+    return {
+      success: true,
+      minutes: value,
+      affectedRows: result.affectedRows,
+      changedRows: result.changedRows,
+      timestamp: new Date().toISOString()
+    };
+  } catch (err) {
+    console.error('[TIMER RESET] Error:', err);
+    throw err;
+  }
+}
+
+/**
  * Schedule timer reset to run at midnight every day
  * Cron format: second minute hour day month weekday
  * '0 0 0 * * *' = At 00:00:00 (midnight) every day
@@ -56,5 +93,6 @@ function scheduleTimerReset() {
 
 module.exports = {
   resetStudentTimers,
+  setAllStudentTimers,
   scheduleTimerReset
 };

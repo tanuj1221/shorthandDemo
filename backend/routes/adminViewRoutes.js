@@ -49,7 +49,8 @@ router.post('/audio/delete', isAuthenticatedAdmin, adminView.deleteAudioSubmissi
 // Excel upload route
 router.post('/upload/excel', upload.single('excelFile'), adminViewController.uploadExcelFile);
 
-// Timer reset route
+// Timer reset routes
 router.post('/reset-timers', adminView.resetAllStudentTimers);
+router.post('/reset-timers-to', adminView.setStudentTimersToValue);
 
 module.exports = router;

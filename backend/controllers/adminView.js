@@ -1619,14 +1619,14 @@ function processCSVFile(filePath) {
 
 
 // ---------------------- TIMER RESET ----------------------
-const { resetStudentTimers } = require('../services/resetTimerService');
+const { resetStudentTimers, setAllStudentTimers } = require('../services/resetTimerService');
 
 exports.resetAllStudentTimers = async (req, res) => {
   console.log('[ADMIN] Manual timer reset triggered');
-  
+
   try {
     const result = await resetStudentTimers();
-    
+
     res.status(200).json({
       success: true,
       message: 'Student timers reset successfully',
@@ -1637,6 +1637,30 @@ exports.resetAllStudentTimers = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to reset student timers',
+      error: err.message
+    });
+  }
+};
+
+// Reset every student's rem_time to a fixed value in minutes (e.g. 300, 1440).
+exports.setStudentTimersToValue = async (req, res) => {
+  const { minutes } = req.body;
+  console.log(`[ADMIN] Manual timer set-to-value triggered (minutes=${minutes})`);
+
+  try {
+    const result = await setAllStudentTimers(minutes);
+
+    res.status(200).json({
+      success: true,
+      message: `Student timers reset to ${result.minutes} minutes successfully`,
+      ...result
+    });
+  } catch (err) {
+    console.error('[ADMIN] Timer set-to-value failed:', err);
+    const status = err.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      message: status === 400 ? err.message : 'Failed to reset student timers',
       error: err.message
     });
   }

@@ -40,6 +40,39 @@ const ResetButtons = () => {
     }
   };
 
+  const handleResetToValue = async (minutes) => {
+    if (!window.confirm(`Are you sure you want to reset all student timers to ${minutes} minutes? This will update rem_time for every student.`)) {
+      return;
+    }
+
+    setLoading(true);
+    setMessage({ text: '', type: '' });
+
+    try {
+      const response = await axios.post('/reset-timers-to', { minutes }, {
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        setMessage({
+          text: `✓ Success! Set ${response.data.changedRows} student timers to ${minutes} minutes.`,
+          type: 'success'
+        });
+
+        // Clear message after 5 seconds
+        setTimeout(() => setMessage({ text: '', type: '' }), 5000);
+      }
+    } catch (error) {
+      console.error('Timer reset error:', error);
+      setMessage({
+        text: `✗ Error: ${error.response?.data?.message || 'Failed to reset timers'}`,
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4 mt-4">
       {/* Timer Reset Button */}
@@ -89,11 +122,19 @@ const ResetButtons = () => {
       </div>
 
       {/* Original Buttons (if still needed) */}
-      <button className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-2 transform hover:-translate-y-1">
+      <button
+        onClick={() => handleResetToValue(300)}
+        disabled={loading}
+        className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-2 transform hover:-translate-y-1 disabled:bg-gray-400 disabled:transform-none disabled:cursor-not-allowed"
+      >
         <span>Reset Time to 300 min</span>
       </button>
-      
-      <button className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-2 transform hover:-translate-y-1">
+
+      <button
+        onClick={() => handleResetToValue(1440)}
+        disabled={loading}
+        className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-2 transform hover:-translate-y-1 disabled:bg-gray-400 disabled:transform-none disabled:cursor-not-allowed"
+      >
         <span>Reset Time to 1440 min</span>
       </button>
     </div>
